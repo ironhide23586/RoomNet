@@ -14,6 +14,9 @@ TRAIN_LIST_FPATH = 'train_list.txt'
 VAL_LIST_FPATH = 'val_list.txt'
 IMG_SIDE = 300
 
+TRAIN_STEPS = 100000
+SAVE_FREQ = 100
+
 
 def extract_fpaths(data_dir):
     if os.path.isfile(TRAIN_LIST_FPATH) and os.path.isfile(VAL_LIST_FPATH):
@@ -74,6 +77,12 @@ if __name__ == '__main__':
     val_data_reader = TrainFeeder(train_fpaths, batch_size=32, batches_per_queue=40, shuffle=False,
                                   im_side=IMG_SIDE, random_crop=False)
 
-    x, y = train_data_reader.dequeue()
     nn = RoomNet(num_classes=6, im_side=IMG_SIDE)
-    k = 0
+    nn.init()
+
+    for train_iter in range(TRAIN_STEPS):
+        x, y = train_data_reader.dequeue()
+        loss = nn.train_step(x, y)
+        print('Step', train_iter, 'loss =', loss)
+        if train_iter % SAVE_FREQ == 0:
+            nn.save()
