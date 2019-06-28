@@ -1,32 +1,33 @@
 import os
 from glob import glob
+import json
 
-import tensorflow as tf
 import numpy as np
-import cv2
 
 from generator import TrainFeeder
 from network import RoomNet
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
 
 DATA_DIR = './REI-Dataset'
 TRAIN_LIST_FPATH = 'train_list.txt'
 VAL_LIST_FPATH = 'val_list.txt'
-IMG_SIDE = 300
+TRAIN_STATS_FILE = 'all_train_stats.json'
+IMG_SIDE = 600
 
 TRAIN_STEPS = 100000
 SAVE_FREQ = 100
-
+LEARN_RATE = 1e-4
 
 def extract_fpaths(data_dir):
     if os.path.isfile(TRAIN_LIST_FPATH) and os.path.isfile(VAL_LIST_FPATH):
-        print('Training and validattion fpath lists found!, reading from them')
+        print('Training and validation fpath lists found!, reading from them')
         with open(TRAIN_LIST_FPATH, 'r') as f:
             all_train_txt = f.readlines()
         with open(VAL_LIST_FPATH, 'r') as f:
             all_val_txt = f.readlines()
         return all_train_txt, all_val_txt
-    print('Training and validattion fpath lists not found!, generating them')
+    print('Training and validation fpath lists not found!, generating them')
     class_dirs = glob(data_dir + '/*')
     path_mappings = {}
     class_sizes = []
@@ -67,6 +68,7 @@ def extract_fpaths(data_dir):
         f.writelines(all_train_txt)
     with open(VAL_LIST_FPATH, 'w') as f:
         f.writelines(all_val_txt)
+
     return all_train_txt, all_val_txt
 
 
@@ -74,15 +76,39 @@ if __name__ == '__main__':
     train_fpaths, val_fpaths = extract_fpaths(DATA_DIR)
     train_data_reader = TrainFeeder(train_fpaths, batch_size=32, batches_per_queue=40, shuffle=True,
                                     im_side=IMG_SIDE, random_crop=True)
-    val_data_reader = TrainFeeder(train_fpaths, batch_size=32, batches_per_queue=40, shuffle=False,
+    val_data_reader = TrainFeeder(val_fpaths, batch_size=64, batches_per_queue=10, shuffle=False,
                                   im_side=IMG_SIDE, random_crop=False)
 
-    nn = RoomNet(num_classes=6, im_side=IMG_SIDE)
+    nn = RoomNet(num_classes=6, im_side=IMG_SIDE, num_steps=TRAIN_STEPS, learn_rate=LEARN_RATE)
     nn.init()
-
-    for train_iter in range(TRAIN_STEPS):
-        x, y = train_data_reader.dequeue()
-        loss = nn.train_step(x, y)
-        print('Step', train_iter, 'loss =', loss)
+    # nn.load()
+    if os.path.isfile(TRAIN_STATS_FILE):
+        all_train_stats = json.load(open(TRAIN_STATS_FILE, 'r'))
+    else:
+        all_train_stats = []
+    for train_iter in range(nn.start_step, nn.start_step + TRAIN_STEPS):
         if train_iter % SAVE_FREQ == 0:
-            nn.save()
+            x_val, y_val = val_data_reader.dequeue()
+            y_vals = list(y_val)
+            y_preds = []
+            print('Validating model at step', nn.step)
+            while not val_data_reader.train_state['previous_epoch_done']:
+                y_pred = nn.infer(x_val)
+                y_preds += list(y_pred)
+                x_val, y_val = val_data_reader.dequeue()
+                y_vals += list(y_val)
+            print('Inference Complete!')
+            y_vals = y_vals[:len(y_preds)]
+            acc = accuracy_score(y_vals, y_preds)
+            prec, rec, fsc, supp = precision_recall_fscore_support(y_vals, y_preds)
+            nn.save(suffix=str(acc))
+            train_stats = {'step': int(nn.step), 'accuracy': float(acc),
+                           'precisions': list(map(float, list(prec))),
+                           'recalls': list(map(float, list(rec))),
+                           'f-scores': list(map(float, list(fsc)))}
+            all_train_stats.append(train_stats)
+            print('Dumping train stats to', TRAIN_STATS_FILE)
+            json.dump(all_train_stats, open(TRAIN_STATS_FILE, 'w'), indent=4, sort_keys=True)
+        x, y = train_data_reader.dequeue()
+        loss, train_step, learn_rate = nn.train_step(x, y)
+        print('Step', train_step, 'loss =', loss, 'learn_rate =', learn_rate)
