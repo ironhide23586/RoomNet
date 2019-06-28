@@ -1,2 +1,2 @@
-model_checkpoint_path: "roomnet--0.5463169642857143--6100"
-all_model_checkpoint_paths: "roomnet--0.5463169642857143--6100"
+model_checkpoint_path: "roomnet--0.2332175925925926--200"
+all_model_checkpoint_paths: "roomnet--0.2332175925925926--200"

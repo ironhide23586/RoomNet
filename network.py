@@ -25,7 +25,7 @@ class RoomNet:
 
         self.loss_op = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.y_tensor,
                                                                       logits=self.out_op)
-        l2_losses = [self.l2_regularizer_coeff * tf.nn.l2_loss(v) for v in tf.trainable_variables()]
+        l2_losses = [self.l2_regularizer_coeff * tf.nn.l2_loss(v) for v in self.trainable_vars]
         self.reduced_loss = tf.reduce_mean(self.loss_op) + tf.add_n(l2_losses)
 
         self.start_step = start_step
@@ -80,13 +80,16 @@ class RoomNet:
         self.sess.run(step_assign_op)
         print('Model restored from', model_path)
 
-    def infer(self, im):
-        outs = self.sess.run(self.outs_final, feed_dict={self.x_tensor: im / 255.})
+    def infer(self, im_in):
+        im = ((im_in[:, :, :, [2, 1, 0]] / 255.) * 2) - 1
+        outs = self.sess.run(self.outs_final, feed_dict={self.x_tensor: im})
         return outs
 
-    def train_step(self, x, y):
+    def train_step(self, x_in, y):
+        x = ((x_in[:, :, :, [2, 1, 0]] / 255.) * 2) - 1
         loss, _, step_tf, lr = self.sess.run([self.reduced_loss, self.train_op, self.step_ph, self.learn_rate_tf],
-                                             feed_dict={self.x_tensor: x / 255., self.y_tensor: y})
+                                             feed_dict={self.x_tensor: x,
+                                                        self.y_tensor: y})
         self.step = step_tf
         return loss, step_tf, lr
 

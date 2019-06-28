@@ -13,7 +13,7 @@ DATA_DIR = './REI-Dataset'
 TRAIN_LIST_FPATH = 'train_list.txt'
 VAL_LIST_FPATH = 'val_list.txt'
 TRAIN_STATS_FILE = 'all_train_stats.json'
-IMG_SIDE = 600
+IMG_SIDE = 224
 
 TRAIN_STEPS = 100000
 SAVE_FREQ = 100
