@@ -1,21 +1,25 @@
 import json
+import os
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 
 CLASS_LABELS = ['Backyard', 'Bathroom', 'Bedroom', 'Frontyard', 'Kitchen', 'LivingRoom']
+OUT_DIR = 'performance_plots'
 all_colors = np.array([(244, 35, 231), (69, 69, 69), (219, 219, 0),
                        (0, 0, 142), (0, 79, 100), (119, 10, 32)]).astype(np.float32) / 255.
 train_stats_json = 'all_train_stats.json'
 
 
 if __name__ == '__main__':
+    if not os.path.isdir(OUT_DIR):
+        os.makedirs(OUT_DIR)
     train_stats = json.load(open(train_stats_json, 'r'))
-    overall_acc_path = 'accuracy_plot.png'
-    overall_fsc_path = 'fscore_plot.png'
-    overall_rec_path = 'recall_plot.png'
-    overall_prec_path = 'precision_path.png'
+    overall_acc_path = OUT_DIR + os.sep + 'accuracy_plot.png'
+    overall_fsc_path = OUT_DIR + os.sep + 'fscore_plot.png'
+    overall_rec_path = OUT_DIR + os.sep + 'recall_plot.png'
+    overall_prec_path = OUT_DIR + os.sep + 'precision_plot.png'
     steps = []
     accs = []
     fscs = []
