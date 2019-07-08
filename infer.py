@@ -4,9 +4,9 @@ import shutil
 
 import cv2
 from tqdm import tqdm
+import xlwt
 
 from network import RoomNet
-from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
 
 CLASS_LABELS = ['Backyard', 'Bathroom', 'Bedroom', 'Frontyard', 'Kitchen', 'LivingRoom']
@@ -28,6 +28,7 @@ def read_fpaths(list_fpath):
 
 
 def groundtruth_validation(nn):
+    from sklearn.metrics import accuracy_score, precision_recall_fscore_support
     fpaths, labels, num_fpaths = read_fpaths(INPUT_IMG_PATH_LIST_FILE)
     y_preds = []
     print('Inferring Images...')
@@ -55,15 +56,24 @@ def classify_im_dir(nn, imgs_dir):
     all_im_paths = glob(imgs_dir + '/*')
     num_fpaths = len(all_im_paths)
     out_dir = imgs_dir + '_classified'
+    xl_fpath = out_dir + '_results.xls'
     class_dirs = [out_dir + os.sep + CLASS_LABELS[i] for i in range(len(CLASS_LABELS))]
     for dir in class_dirs:
         force_makedir(dir)
     print('Beginning inference..')
+    excel_file = xlwt.Workbook()
+    sheet = excel_file.add_sheet('classification_results')
+    sheet.write(0, 0, 'IMAGE_NAME')
+    sheet.write(0, 1, 'PREDICTED_LABEL')
     for i in tqdm(range(num_fpaths)):
         fpath = all_im_paths[i]
         im = cv2.imread(fpath)
         pred_label = CLASS_LABELS[nn.infer_optimized(im)]
         shutil.copy(fpath, out_dir + os.sep + pred_label)
+        sheet.write(i + 1, 0, fpath.split(os.sep)[-1])
+        sheet.write(i + 1, 1, pred_label)
+    excel_file.save(xl_fpath)
+    return xl_fpath
 
 
 if __name__ == '__main__':
@@ -72,4 +82,5 @@ if __name__ == '__main__':
     nn.load(INPUT_MODEL_PATH)
 
     # stats = groundtruth_validation(nn)
-    classify_im_dir(nn, './test_images/set0/images')
+    xl_out_path = classify_im_dir(nn, './test_images/set0/images')
+    k = 0
