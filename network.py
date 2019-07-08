@@ -77,6 +77,10 @@ class RoomNet:
             self.sess.run(init)
 
     def save(self, suffix=None):
+        if self.optimized_inference:
+            self.restorer.save(self.sess, 'roomnet')
+            print('Model Saved in optimized inference mode')
+            return
         if suffix:
             save_fpath = self.model_fpath_prefix + '-' + suffix + '--' + str(self.step)
         else:
