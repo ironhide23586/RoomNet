@@ -3,39 +3,50 @@ from glob import glob
 
 import tensorflow as tf
 import numpy as np
-
-# from tensorflow.keras.applications.inception_v3 import InceptionV3
+import cv2
 
 
 class RoomNet:
 
-    def __init__(self, num_classes, im_side=600, is_training=True, start_step=0, dropout_enabled=False,
+    def __init__(self, num_classes, im_side=600, compute_bn_mean_var=True, start_step=0, dropout_enabled=False,
                  learn_rate=1e-4, l2_regularizer_coeff=1e-2, num_steps=10000, dropout_rate=.2,
-                 update_batchnorm_means_vars=True):
+                 update_batchnorm_means_vars=True, optimized_inference=False):
         self.num_classes = num_classes
         self.im_side = im_side
-        self.is_training = is_training
-        self.learn_rate = learn_rate
-        self.dropout_enabled = dropout_enabled
-        self.l2_regularizer_coeff = l2_regularizer_coeff
+        self.compute_bn_mean_var = compute_bn_mean_var
+        self.optimized_inference = optimized_inference
         self.x_tensor = tf.placeholder(tf.float32, shape=[None, im_side, im_side, 3],
                                        name='input_x_tensor')
+        self.layers = [self.x_tensor]
+
+        self.start_step = start_step
+        self.step = start_step
+        self.learn_rate = learn_rate
+        self.step_ph = tf.Variable(self.start_step, trainable=False, name='train_step')
+        self.learn_rate_tf = tf.train.exponential_decay(self.learn_rate, self.step_ph, num_steps, decay_rate=0.068,
+                                                        name='learn_rate')
+        self.unsaved_vars = [self.step_ph, self.learn_rate_tf]
+
+        self.sess = None
+        if self.optimized_inference:
+            self.dropout_enabled = False
+            self.out_op, _, _ = self.init_nn_graph()
+            self.outs_softmax_op = tf.nn.softmax(self.out_op)
+            self.outs_final = tf.argmax(self.outs_softmax_op, axis=-1)
+            self.vars_to_keep = [v for v in tf.global_variables() if v not in self.unsaved_vars]
+            self.restorer = tf.train.Saver(var_list=self.vars_to_keep)
+            return
+        self.dropout_enabled = dropout_enabled
+        self.l2_regularizer_coeff = l2_regularizer_coeff
         self.y_tensor = tf.placeholder(tf.int32, shape=None, name='input_y_class_ids')
         if self.dropout_enabled:
             self.dropout_rate = dropout_rate
             self.dropout_rate_tensor = tf.placeholder(tf.float32, shape=())
-        self.layers = [self.x_tensor]
         self.out_op, self.trainable_vars, self.stop_grad_vars = self.init_nn_graph()
         self.loss_op = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.y_tensor,
                                                                       logits=self.out_op)
         l2_losses = [self.l2_regularizer_coeff * tf.nn.l2_loss(v) for v in self.trainable_vars]
         self.reduced_loss = tf.reduce_mean(self.loss_op) + tf.add_n(l2_losses)
-
-        self.start_step = start_step
-        self.step = start_step
-        self.step_ph = tf.Variable(self.start_step, trainable=False, name='train_step')
-        self.learn_rate_tf = tf.train.exponential_decay(self.learn_rate, self.step_ph, num_steps, decay_rate=0.068,
-                                                        name='learn_rate')
 
         self.opt = tf.train.AdamOptimizer(learning_rate=self.learn_rate_tf)
         grads = tf.gradients(self.reduced_loss, self.trainable_vars, stop_gradients=self.stop_grad_vars)
@@ -49,9 +60,7 @@ class RoomNet:
 
         self.outs_softmax_op = tf.nn.softmax(self.out_op)
         self.outs_final = tf.argmax(self.outs_softmax_op, axis=-1)
-        self.sess = None
 
-        self.unsaved_vars = [self.step_ph, self.learn_rate_tf]
         self.vars_to_keep = [v for v in tf.global_variables() if v not in self.unsaved_vars]
 
         self.saver = tf.train.Saver(max_to_keep=0, var_list=self.vars_to_keep)
@@ -76,6 +85,8 @@ class RoomNet:
         print('Model saved at', save_fpath)
 
     def load(self, model_path=None):
+        if not self.sess:
+            self.init()
         if model_path is None:
             if os.path.isdir(self.model_folder):
                 existing_paths = glob(self.model_folder + '/*.index')
@@ -91,8 +102,9 @@ class RoomNet:
                 print('No model found to restore from, initializing random weights')
                 return
         self.restorer.restore(self.sess, model_path)
-        step_assign_op = tf.assign(self.step_ph, self.start_step)
-        self.sess.run(step_assign_op)
+        if not self.optimized_inference:
+            step_assign_op = tf.assign(self.step_ph, self.start_step)
+            self.sess.run(step_assign_op)
         print('Model restored from', model_path)
 
     def infer(self, im_in):
@@ -103,6 +115,27 @@ class RoomNet:
         else:
             outs = self.sess.run(self.outs_final, feed_dict={self.x_tensor: im})
         return outs
+
+    def center_crop(self, x):
+        h, w, _ = x.shape
+        offset = abs((w - h) // 2)
+        if h < w:
+            x_pp = x[:, offset:offset + h, :]
+        elif w < h:
+            x_pp = x[offset:offset + w, :, :]
+        else:
+            x_pp = x.copy()
+        return x_pp
+
+    def infer_optimized(self, im_in):
+        im = self.center_crop(im_in)
+        h, w, _ = im.shape
+        if h != self.im_side or w != self.im_side:
+            im = cv2.resize(im, (self.im_side, self.im_side))
+        im = ((im[:, :, [2, 1, 0]] / 255.) * 2) - 1
+        im = np.expand_dims(im, 0)
+        out_label_idx = self.sess.run(self.outs_final, feed_dict={self.x_tensor: im})[0]
+        return out_label_idx
 
     def train_step(self, x_in, y):
         x = ((x_in[:, :, :, [2, 1, 0]] / 255.) * 2) - 1
@@ -139,7 +172,7 @@ class RoomNet:
                                        strides=[1, pool_stride, pool_stride, 1], padding=pool_padding)
                 curr_layer.append(layer_out)
             if batch_norm:
-                layer_out = tf.layers.batch_normalization(layer_out, training=self.is_training)
+                layer_out = tf.layers.batch_normalization(layer_out, training=self.compute_bn_mean_var)
                 curr_layer.append(layer_out)
             if depth == 0:
                 residual_input = layer_out
@@ -148,7 +181,7 @@ class RoomNet:
             output = output + tf.image.resize_bilinear(residual_input, output.shape[1:3])
             curr_layer.append(output)
             if batch_norm:
-                output = tf.layers.batch_normalization(output, training=self.is_training)
+                output = tf.layers.batch_normalization(output, training=self.compute_bn_mean_var)
                 curr_layer.append(output)
         if self.dropout_enabled:
             output = tf.nn.dropout(output, rate=self.dropout_rate_tensor)
@@ -163,7 +196,7 @@ class RoomNet:
         layer_outs = tf.nn.relu6(layer_outs)
         curr_layer.append(layer_outs)
         if batch_norm:
-            layer_outs = tf.layers.batch_normalization(layer_outs, training=self.is_training)
+            layer_outs = tf.layers.batch_normalization(layer_outs, training=self.compute_bn_mean_var)
             curr_layer.append(layer_outs)
         if self.dropout_enabled:
             layer_outs = tf.nn.dropout(layer_outs, rate=self.dropout_rate_tensor)
@@ -185,16 +218,5 @@ class RoomNet:
         layer_outs = self.dense_block(layer_outs, self.num_classes, batch_norm=False, biased=True)
         trainable_vars = tf.trainable_variables()
         original_vars = []
-
-        # net = NASNetMobile(input_tensor=self.x_tensor, input_shape=(self.im_side, self.im_side, 3),
-        #                    include_top=False, weights='imagenet', pooling='avg')
-        # net = InceptionV3(input_tensor=self.x_tensor, input_shape=(self.im_side, self.im_side, 3),
-        #                   include_top=False, weights='imagenet', pooling='avg')
-        # layer_outs = net.output
-        # original_vars = tf.global_variables()
-        # layer_outs = self.dense_block(layer_outs, 16)
-        # layer_outs = self.dense_block(layer_outs, self.num_classes, batch_norm=False, biased=True)
-        # y1 = tf.global_variables()
-        # trainable_vars = [v for v in y1 if v not in original_vars]
         return layer_outs, trainable_vars, original_vars
 
