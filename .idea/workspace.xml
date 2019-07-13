@@ -2,57 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="96985683-d6bc-4d04-a7d9-84697103ee1a" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/infer.py" beforeDir="false" afterPath="$PROJECT_DIR$/infer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/download (1).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/download (10).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/download (2).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/download (3).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/download (4).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/download (5).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/download (6).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/download (7).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/download (8).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/download (9).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/download.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/images (1).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/images (10).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/images (11).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/images (12).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/images (2).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/images (3).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/images (4).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/images (5).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/images (6).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/images (7).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/images (8).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/images (9).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images/images.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/Backyard/download (10).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/Backyard/download (2).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/Backyard/download (4).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/Backyard/download (7).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/Backyard/download (9).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/Backyard/download.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/Backyard/images (3).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/Backyard/images (4).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/Backyard/images (7).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/Bathroom/download (5).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/Bathroom/download (6).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/Bathroom/download (8).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/Bathroom/images (10).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/Bathroom/images (9).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/Bedroom/images (1).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/Bedroom/images (2).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/Bedroom/images (6).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/Bedroom/images (8).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/Frontyard/download (1).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/Frontyard/download (3).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/Frontyard/images (5).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/Kitchen/images (12).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/LivingRoom/images (11).jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified/LivingRoom/images.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_images/set0/images_classified_results.xls" beforeDir="false" />
+      <change afterPath="$PROJECT_DIR$/mobile/roomnet-classifier/.idea/gradle.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mobile/roomnet-classifier/.idea/vcs.xml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -88,7 +39,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/infer.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-570">
+            <state relative-caret-position="119">
               <caret line="15" column="14" selection-start-line="15" selection-start-column="14" selection-end-line="15" selection-end-column="14" />
               <folding>
                 <element signature="e#0#21#0" expanded="true" />
@@ -166,7 +117,7 @@
         <entry file="file://$PROJECT_DIR$/generator.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="284">
-              <caret line="73" column="13" lean-forward="true" selection-start-line="73" selection-start-column="13" selection-end-line="73" selection-end-column="13" />
+              <caret line="73" column="13" selection-start-line="73" selection-start-column="13" selection-end-line="73" selection-end-column="13" />
               <folding>
                 <element signature="e#0#16#0" expanded="true" />
               </folding>
@@ -226,7 +177,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -238,6 +188,7 @@
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -362,11 +313,12 @@
       <workItem from="1562583379140" duration="2100000" />
       <workItem from="1562653678474" duration="2028000" />
       <workItem from="1562774004210" duration="3432000" />
+      <workItem from="1563024438384" duration="598000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="77520000" />
+    <option name="totallyTimeSpent" value="78118000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -380,7 +332,7 @@
   <component name="ToolWindowManager">
     <frame x="-7" y="-7" width="1721" height="935" extended-state="6" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.122669876" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.12387252" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -511,6 +463,23 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/legacy_plotter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="102">
+          <caret line="10" column="52" selection-start-line="10" selection-start-column="52" selection-end-line="10" selection-end-column="52" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/infer.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="119">
+          <caret line="15" column="14" selection-start-line="15" selection-start-column="14" selection-end-line="15" selection-end-column="14" />
+          <folding>
+            <element signature="e#0#21#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/plotter.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1292">
@@ -562,27 +531,10 @@
     <entry file="file://$PROJECT_DIR$/train_list.txt">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
-    <entry file="file://$PROJECT_DIR$/legacy_plotter.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="102">
-          <caret line="10" column="52" selection-start-line="10" selection-start-column="52" selection-end-line="10" selection-end-column="52" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/infer.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-570">
-          <caret line="15" column="14" selection-start-line="15" selection-start-column="14" selection-end-line="15" selection-end-column="14" />
-          <folding>
-            <element signature="e#0#21#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/generator.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="284">
-          <caret line="73" column="13" lean-forward="true" selection-start-line="73" selection-start-column="13" selection-end-line="73" selection-end-column="13" />
+          <caret line="73" column="13" selection-start-line="73" selection-start-column="13" selection-end-line="73" selection-end-column="13" />
           <folding>
             <element signature="e#0#16#0" expanded="true" />
           </folding>
