@@ -12,9 +12,10 @@ from network import RoomNet
 CLASS_LABELS = ['Backyard', 'Bathroom', 'Bedroom', 'Frontyard', 'Kitchen', 'LivingRoom']
 
 INPUT_MODEL_PATH = './final_model/roomnet'
+INPUT_IMAGES_DIR = './test_images/set2/images'
 IMG_SIDE = 224
 
-INPUT_IMG_PATH_LIST_FILE = 'val_list.txt'
+# INPUT_IMG_PATH_LIST_FILE = 'val_list.txt'
 
 
 def read_fpaths(list_fpath):
@@ -82,5 +83,5 @@ if __name__ == '__main__':
     nn.load(INPUT_MODEL_PATH)
 
     # stats = groundtruth_validation(nn)
-    xl_out_path = classify_im_dir(nn, './test_images/set0/images')
+    xl_out_path = classify_im_dir(nn, INPUT_IMAGES_DIR)
     k = 0
