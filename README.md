@@ -1,4 +1,5 @@
-# RoomNet
+<img src="https://github.com/ironhide23586/RoomNet/blob/master/documentation/poster.png" alt="drawing" width="500"/>
+
 A Convolutional Neural Net to classify pictures of different rooms of a house/apartment with 88.9 % validation accuracy over 1839 images.
 
 Full presentation at - https://github.com/ironhide23586/RoomNet/raw/master/documentation/RoomNet%20Presentation.pptx
