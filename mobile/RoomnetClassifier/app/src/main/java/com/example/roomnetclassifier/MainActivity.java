@@ -2,24 +2,40 @@ package com.example.roomnetclassifier;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.content.Intent;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.hardware.Camera;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.EditText;
 
 public class MainActivity extends AppCompatActivity {
     public static final String EXTRA_MESSAGE = "com.example.roomnetclassifier.MESSAGE";
+//    public static int NumCameras = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Camera c = getCameraInstance();
+
     }
 
-    public void sendMessage(View view) {
-        Intent intent = new Intent(this, DisplayMessageActivity.class);
-        EditText editText = (EditText) findViewById(R.id.editText);
-        String message = editText.getText().toString();
-        intent.putExtra(EXTRA_MESSAGE, message);
-        startActivity(intent);
+    private boolean cheackCameraHardware(Context context) {
+        if (context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)) {
+
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    public static Camera getCameraInstance() {
+        Camera c = null;
+        try {
+            c = Camera.open();
+        }
+        catch (Exception e) {
+            // Camera unavailable
+        }
+        return c;
     }
 }
