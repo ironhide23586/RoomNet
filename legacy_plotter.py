@@ -1,5 +1,14 @@
+'''
+Author: Souham Biswas
+Email: souham.biswas@outlook.com
+GitHub: https://github.com/ironhide23586
+LinkedIn: https://www.linkedin.com/in/souham
+
+I'm not responsible if your machine catches fire.
+'''
+
+
 from glob import glob
-import os
 
 import matplotlib.pyplot as plt
 import numpy as np

@@ -1,9 +1,17 @@
-import itertools
+'''
+Author: Souham Biswas
+Email: souham.biswas@outlook.com
+GitHub: https://github.com/ironhide23586
+LinkedIn: https://www.linkedin.com/in/souham
+
+I'm not responsible if your machine catches fire.
+'''
+
+
 import logging
 from threading import Thread
 from queue import Queue
 import time
-import os
 
 import numpy as np
 import cv2
