@@ -36,6 +36,7 @@ public class CameraActivity extends Activity {
         preview.addView(mPreview);
     }
 
+
     private boolean checkCameraHardware(Context context) {
         if (context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)) {
 

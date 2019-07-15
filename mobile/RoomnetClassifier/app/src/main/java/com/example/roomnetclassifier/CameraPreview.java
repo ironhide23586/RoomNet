@@ -11,6 +11,7 @@ import java.io.IOException;
 public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
     private SurfaceHolder mHolder;
     private Camera mCamera;
+    private Camera.PreviewCallback cb;
 
     public CameraPreview(Context context, Camera camera) {
         super(context);
@@ -20,6 +21,12 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         mHolder.addCallback(this);
 
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS); // deprecated in new Android
+        cb = new Camera.PreviewCallback() {
+            @Override
+            public void onPreviewFrame(byte[] bytes, Camera camera) {
+                int k = 0;
+            }
+        };
     }
 
     public void surfaceCreated(SurfaceHolder holder) {
@@ -54,6 +61,8 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         // Restart preview
         try {
             mCamera.setPreviewDisplay(holder);
+            mCamera.setPreviewCallback(cb);
+            mCamera.startPreview();
         }
         catch (Exception e) {
             Log.d("tag ", e.getMessage());
