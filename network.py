@@ -17,13 +17,19 @@ import cv2
 
 class RoomNet:
 
-    def __init__(self, num_classes, im_side=600, compute_bn_mean_var=True, start_step=0, dropout_enabled=False,
+    def __init__(self, num_classes=6, im_side=224, compute_bn_mean_var=True, start_step=0, dropout_enabled=False,
                  learn_rate=1e-4, l2_regularizer_coeff=1e-2, num_steps=10000, dropout_rate=.2,
-                 update_batchnorm_means_vars=True, optimized_inference=False):
+                 update_batchnorm_means_vars=True, optimized_inference=False, mobile_mode=False):
         self.num_classes = num_classes
         self.im_side = im_side
         self.compute_bn_mean_var = compute_bn_mean_var
         self.optimized_inference = optimized_inference
+        if mobile_mode:
+            self.tflite_interpreter = None
+            self.tflite_inputs = None
+            self.tflite_outputs = None
+            self.mobile_mode = mobile_mode
+            return
         self.x_tensor = tf.placeholder(tf.float32, shape=[None, im_side, im_side, 3],
                                        name='input_x_tensor')
         self.layers = [self.x_tensor]
@@ -40,8 +46,8 @@ class RoomNet:
         if self.optimized_inference:
             self.dropout_enabled = False
             self.out_op, _, _ = self.init_nn_graph()
-            self.outs_softmax_op = tf.nn.softmax(self.out_op)
-            self.outs_final = tf.argmax(self.outs_softmax_op, axis=-1)
+            self.outs_softmax_op = tf.nn.softmax(self.out_op, name='out_scores')
+            self.outs_final = tf.argmax(self.outs_softmax_op, axis=-1, name='out_class_id')
             self.vars_to_keep = [v for v in tf.global_variables() if v not in self.unsaved_vars]
             self.restorer = tf.train.Saver(var_list=self.vars_to_keep)
             return
@@ -140,15 +146,33 @@ class RoomNet:
             x_pp = x.copy()
         return x_pp
 
-    def infer_optimized(self, im_in):
+    def __preprocess_input(self, im_in):
         im = self.center_crop(im_in)
         h, w, _ = im.shape
         if h != self.im_side or w != self.im_side:
             im = cv2.resize(im, (self.im_side, self.im_side))
         im = ((im[:, :, [2, 1, 0]] / 255.) * 2) - 1
         im = np.expand_dims(im, 0)
+        return im
+
+    def infer_optimized(self, im_in):
+        im = self.__preprocess_input(im_in)
         out_label_idx = self.sess.run(self.outs_final, feed_dict={self.x_tensor: im})[0]
         return out_label_idx
+
+    def infer_tflite(self, im_in):
+        im = self.__preprocess_input(im_in).astype(np.float32)
+        self.tflite_interpreter.set_tensor(self.tflite_inputs[0]['index'], im)
+        self.tflite_interpreter.invoke()
+        out_label_idx = self.tflite_interpreter.get_tensor(self.tflite_outputs[0]['index'])
+        out_label_idx = int(out_label_idx[0])
+        return out_label_idx
+
+    def infer_final(self, im_in):
+        if self.mobile_mode:
+            return self.infer_tflite(im_in)
+        else:
+            return self.infer_optimized(im_in)
 
     def train_step(self, x_in, y):
         x = ((x_in[:, :, :, [2, 1, 0]] / 255.) * 2) - 1
@@ -233,3 +257,15 @@ class RoomNet:
         original_vars = []
         return layer_outs, trainable_vars, original_vars
 
+    def export_toco_model(self, out_path='roomnet.tflite'):
+        converter = tf.lite.TFLiteConverter.from_session(self.sess, [self.x_tensor], [self.outs_final,
+                                                                                      self.outs_softmax_op])
+        tflite_model = converter.convert()
+        with open(out_path, 'wb') as f:
+            f.write(tflite_model)
+
+    def load_tflite(self, path='roomnet.tflite'):
+        self.tflite_interpreter = tf.lite.Interpreter(model_path=path)
+        self.tflite_interpreter.allocate_tensors()
+        self.tflite_inputs = self.tflite_interpreter.get_input_details()
+        self.tflite_outputs = self.tflite_interpreter.get_output_details()

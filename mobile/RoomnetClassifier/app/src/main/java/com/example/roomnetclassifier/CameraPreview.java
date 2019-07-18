@@ -1,6 +1,8 @@
 package com.example.roomnetclassifier;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.res.AssetFileDescriptor;
 import android.hardware.Camera;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -8,7 +10,34 @@ import android.view.SurfaceView;
 
 import org.tensorflow.lite.Interpreter;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+
+
+public class VisionModel {
+    public MappedByteBuffer buffered_model;
+    private Activity parent_activity;
+    public String model_fpath;
+
+    public VisionModel(Activity activity, String modelPath) {
+        parent_activity = activity;
+        model_fpath = modelPath;
+        buffered_model = loadModelFile();
+    }
+
+    private MappedByteBuffer loadModelFile() {
+        AssetFileDescriptor fileDescriptor = parent_activity.getAssets().openFd(model_fpath);
+        FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
+        FileChannel fileChannel = inputStream.getChannel();
+        long startOffset = fileDescriptor.getStartOffset();
+        long declaredLength = fileDescriptor.getDeclaredLength();
+        MappedByteBuffer buffer_out = fileChannel.map(FileChannel.MapMode.READ_ONLY,
+                startOffset, declaredLength);
+        return buffer_out;
+    }
+}
 
 public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
     private SurfaceHolder mHolder;

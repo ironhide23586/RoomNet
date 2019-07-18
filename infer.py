@@ -78,7 +78,7 @@ def classify_im_dir(nn, imgs_dir):
     for i in tqdm(range(num_fpaths)):
         fpath = all_im_paths[i]
         im = cv2.imread(fpath)
-        pred_label = CLASS_LABELS[nn.infer_optimized(im)]
+        pred_label = CLASS_LABELS[nn.infer_final(im)]
         shutil.copy(fpath, out_dir + os.sep + pred_label)
         sheet.write(i + 1, 0, fpath.split(os.sep)[-1])
         sheet.write(i + 1, 1, pred_label)
@@ -87,9 +87,13 @@ def classify_im_dir(nn, imgs_dir):
 
 
 if __name__ == '__main__':
-    nn = RoomNet(num_classes=len(CLASS_LABELS), im_side=IMG_SIDE, compute_bn_mean_var=False,
-                 optimized_inference=True)
-    nn.load(INPUT_MODEL_PATH)
+    # nn = RoomNet(num_classes=len(CLASS_LABELS), im_side=IMG_SIDE, compute_bn_mean_var=False,
+    #              optimized_inference=True)
+    # nn.load(INPUT_MODEL_PATH)
+    # nn.export_toco_model()
+
+    nn = RoomNet(mobile_mode=True)
+    nn.load_tflite()
 
     # stats = groundtruth_validation(nn)
     xl_out_path = classify_im_dir(nn, INPUT_IMAGES_DIR)
