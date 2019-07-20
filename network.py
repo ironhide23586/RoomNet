@@ -258,8 +258,7 @@ class RoomNet:
         return layer_outs, trainable_vars, original_vars
 
     def export_toco_model(self, out_path='roomnet.tflite'):
-        converter = tf.lite.TFLiteConverter.from_session(self.sess, [self.x_tensor], [self.outs_final,
-                                                                                      self.outs_softmax_op])
+        converter = tf.lite.TFLiteConverter.from_session(self.sess, [self.x_tensor], [self.outs_softmax_op])
         tflite_model = converter.convert()
         with open(out_path, 'wb') as f:
             f.write(tflite_model)

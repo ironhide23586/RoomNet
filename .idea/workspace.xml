@@ -2,7 +2,14 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="96985683-d6bc-4d04-a7d9-84697103ee1a" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/java/com/example/roomnetclassifier/VisionModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/infer.py" beforeDir="false" afterPath="$PROJECT_DIR$/infer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/AndroidManifest.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/java/com/example/roomnetclassifier/CameraActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/java/com/example/roomnetclassifier/CameraActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/java/com/example/roomnetclassifier/CameraPreview.java" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/java/com/example/roomnetclassifier/CameraPreview.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/res/layout/activity_main.xml" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/res/layout/activity_main.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/network.py" beforeDir="false" afterPath="$PROJECT_DIR$/network.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -36,20 +43,20 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/network.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="287">
-              <caret line="168" selection-start-line="168" selection-end-line="168" />
+            <state relative-caret-position="369">
+              <caret line="266" column="70" selection-start-line="266" selection-start-column="70" selection-end-line="266" selection-end-column="70" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/infer.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="403">
-              <caret line="98" column="55" lean-forward="true" selection-start-line="98" selection-start-column="55" selection-end-line="98" selection-end-column="55" />
+            <state relative-caret-position="224">
+              <caret line="91" column="29" selection-start-line="91" selection-start-column="29" selection-end-line="91" selection-end-column="29" />
             </state>
           </provider>
         </entry>
@@ -132,8 +139,8 @@
         <option value="$PROJECT_DIR$/train.py" />
         <option value="$PROJECT_DIR$/generator.py" />
         <option value="$PROJECT_DIR$/legacy_plotter.py" />
-        <option value="$PROJECT_DIR$/infer.py" />
         <option value="$PROJECT_DIR$/network.py" />
+        <option value="$PROJECT_DIR$/infer.py" />
       </list>
     </option>
   </component>
@@ -147,6 +154,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -154,11 +162,55 @@
               <item name="RoomNet" type="b2602c69:ProjectViewProjectNode" />
               <item name="RoomNet" type="462c0819:PsiDirectoryNode" />
             </path>
+            <path>
+              <item name="RoomNet" type="b2602c69:ProjectViewProjectNode" />
+              <item name="RoomNet" type="462c0819:PsiDirectoryNode" />
+              <item name="mobile" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="RoomNet" type="b2602c69:ProjectViewProjectNode" />
+              <item name="RoomNet" type="462c0819:PsiDirectoryNode" />
+              <item name="mobile" type="462c0819:PsiDirectoryNode" />
+              <item name="RoomnetClassifier" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="RoomNet" type="b2602c69:ProjectViewProjectNode" />
+              <item name="RoomNet" type="462c0819:PsiDirectoryNode" />
+              <item name="mobile" type="462c0819:PsiDirectoryNode" />
+              <item name="RoomnetClassifier" type="462c0819:PsiDirectoryNode" />
+              <item name="app" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="RoomNet" type="b2602c69:ProjectViewProjectNode" />
+              <item name="RoomNet" type="462c0819:PsiDirectoryNode" />
+              <item name="mobile" type="462c0819:PsiDirectoryNode" />
+              <item name="RoomnetClassifier" type="462c0819:PsiDirectoryNode" />
+              <item name="app" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="RoomNet" type="b2602c69:ProjectViewProjectNode" />
+              <item name="RoomNet" type="462c0819:PsiDirectoryNode" />
+              <item name="mobile" type="462c0819:PsiDirectoryNode" />
+              <item name="RoomnetClassifier" type="462c0819:PsiDirectoryNode" />
+              <item name="app" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="main" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="RoomNet" type="b2602c69:ProjectViewProjectNode" />
+              <item name="RoomNet" type="462c0819:PsiDirectoryNode" />
+              <item name="mobile" type="462c0819:PsiDirectoryNode" />
+              <item name="RoomnetClassifier" type="462c0819:PsiDirectoryNode" />
+              <item name="app" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="main" type="462c0819:PsiDirectoryNode" />
+              <item name="assets" type="462c0819:PsiDirectoryNode" />
+            </path>
           </expand>
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -289,11 +341,12 @@
       <workItem from="1563024438384" duration="598000" />
       <workItem from="1563224117808" duration="222000" />
       <workItem from="1563469474815" duration="3919000" />
+      <workItem from="1563597385858" duration="1656000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="82263000" />
+    <option name="totallyTimeSpent" value="83919000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -308,19 +361,19 @@
     <frame x="-7" y="-7" width="1721" height="935" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.12748046" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.16897173" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.24129353" />
-      <window_info active="true" anchor="bottom" id="Debug" order="3" visible="true" weight="0.34452736" />
+      <window_info active="true" anchor="bottom" id="Debug" order="3" sideWeight="0.49969932" visible="true" weight="0.34452736" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.329602" />
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="bottom" id="Database Changes" order="8" />
-      <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" />
+      <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.50030065" side_tool="true" weight="0.34452736" />
       <window_info anchor="bottom" id="Version Control" order="10" weight="0.329602" />
       <window_info anchor="bottom" id="Python Console" order="11" weight="0.329602" />
       <window_info anchor="bottom" id="Terminal" order="12" weight="0.329602" />
@@ -370,6 +423,11 @@
           <line>99</line>
           <option name="timeStamp" value="10" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/infer.py</url>
+          <line>92</line>
+          <option name="timeStamp" value="11" />
+        </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
   </component>
@@ -377,7 +435,7 @@
     <SUITE FILE_PATH="coverage/RoomNet$plot.coverage" NAME="plot Coverage Results" MODIFIED="1562655783115" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RoomNet$train.coverage" NAME="train Coverage Results" MODIFIED="1562579456701" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RoomNet$main.coverage" NAME="main Coverage Results" MODIFIED="1562459813245" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/RoomNet$infer.coverage" NAME="infer Coverage Results" MODIFIED="1563472078775" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/RoomNet$infer.coverage" NAME="infer Coverage Results" MODIFIED="1563597608059" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RoomClassifier$main.coverage" NAME="main Coverage Results" MODIFIED="1561331333859" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="editorHistoryManager">
@@ -455,6 +513,13 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/../../AppData/Local/Programs/Python/Python37/Lib/site-packages/tensorflow/lite/python/interpreter_wrapper/tensorflow_wrap_interpreter_wrapper.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="167">
+          <caret line="135" selection-start-line="135" selection-end-line="135" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/legacy_plotter.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="17">
@@ -476,6 +541,13 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/train.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret column="3" selection-start-column="3" selection-end-column="3" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/train_list.txt">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
@@ -486,31 +558,17 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/train.py">
+    <entry file="file://$PROJECT_DIR$/infer.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret column="3" selection-start-column="3" selection-end-column="3" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../../AppData/Local/Programs/Python/Python37/Lib/site-packages/tensorflow/lite/python/interpreter_wrapper/tensorflow_wrap_interpreter_wrapper.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="167">
-          <caret line="135" selection-start-line="135" selection-end-line="135" />
+        <state relative-caret-position="224">
+          <caret line="91" column="29" selection-start-line="91" selection-start-column="29" selection-end-line="91" selection-end-column="29" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/network.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="287">
-          <caret line="168" selection-start-line="168" selection-end-line="168" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/infer.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="403">
-          <caret line="98" column="55" lean-forward="true" selection-start-line="98" selection-start-column="55" selection-end-line="98" selection-end-column="55" />
+        <state relative-caret-position="369">
+          <caret line="266" column="70" selection-start-line="266" selection-start-column="70" selection-end-line="266" selection-end-column="70" />
         </state>
       </provider>
     </entry>

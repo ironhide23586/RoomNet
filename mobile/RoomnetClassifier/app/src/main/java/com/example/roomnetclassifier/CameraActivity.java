@@ -11,11 +11,14 @@ import android.widget.FrameLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import java.io.IOException;
+
 public class CameraActivity extends Activity {
 
     private Camera mCamera;
     private CameraPreview mPreview;
     private static final int CAMERA_REQUEST_CODE = 100;
+    private VisionModel visionModel;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -34,6 +37,15 @@ public class CameraActivity extends Activity {
         mPreview = new CameraPreview(this, mCamera);
         FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
         preview.addView(mPreview);
+
+//        String modelPath = "roomnet.tflite";
+//        try {
+//            visionModel = new VisionModel(this, modelPath);
+//        }
+//        catch (IOException e) {
+//            int k = 0;
+//        }
+//        int k = 0;
     }
 
 
