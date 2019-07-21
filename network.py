@@ -24,11 +24,12 @@ class RoomNet:
         self.im_side = im_side
         self.compute_bn_mean_var = compute_bn_mean_var
         self.optimized_inference = optimized_inference
-        if mobile_mode:
+        self.mobile_mode = mobile_mode
+        self.num_dense_block_initialzed = 0
+        if self.mobile_mode:
             self.tflite_interpreter = None
             self.tflite_inputs = None
             self.tflite_outputs = None
-            self.mobile_mode = mobile_mode
             return
         self.x_tensor = tf.placeholder(tf.float32, shape=[None, im_side, im_side, 3],
                                        name='input_x_tensor')
@@ -199,23 +200,33 @@ class RoomNet:
         layer_out = x_in
         if block_depth == 1:
             make_residual = False
+        identity_downsampled = None
         for depth in range(block_depth):
             layer_out = tf.layers.conv2d(layer_out, output_filters, kernel_size, strides=kernel_stride,
                                          use_bias=use_bias, activation=activation, dilation_rate=dilation,
                                          padding=padding)
+            if identity_downsampled is not None:
+                identity_downsampled = pooling_fn(identity_downsampled, ksize=[1, kernel_size, kernel_size, 1],
+                                                  strides=[1, kernel_stride, kernel_stride, 1], padding=padding)
             curr_layer.append(layer_out)
             if pooling:
                 layer_out = pooling_fn(layer_out, ksize=[1, pool_ksize, pool_ksize, 1],
                                        strides=[1, pool_stride, pool_stride, 1], padding=pool_padding)
+                if identity_downsampled is not None:
+                    identity_downsampled = pooling_fn(identity_downsampled, ksize=[1, pool_ksize, pool_ksize, 1],
+                                                      strides=[1, pool_stride, pool_stride, 1], padding=pool_padding)
                 curr_layer.append(layer_out)
             if batch_norm:
                 layer_out = tf.layers.batch_normalization(layer_out, training=self.compute_bn_mean_var)
                 curr_layer.append(layer_out)
             if depth == 0:
                 residual_input = layer_out
+                identity_downsampled = residual_input
             output = layer_out
         if make_residual:
-            output = output + tf.image.resize_bilinear(residual_input, output.shape[1:3])
+            # output = output + tf.image.resize(residual_input, output.shape[1:3], align_corners=True,
+            #                                   method=tf.image.ResizeMethod.BILINEAR)
+            output = output + identity_downsampled
             curr_layer.append(output)
             if batch_norm:
                 output = tf.layers.batch_normalization(output, training=self.compute_bn_mean_var)
@@ -228,7 +239,22 @@ class RoomNet:
 
     def dense_block(self, x_in, num_outs, batch_norm=True, biased=False):
         curr_layer = []
+
         layer_outs = tf.layers.dense(x_in, num_outs, use_bias=biased)
+
+        # num_ins = int(x_in.shape[-1])
+        # vname_root = 'dense'
+        # if self.num_dense_block_initialzed > 0:
+        #     vname_root += '_' + str(self.num_dense_block_initialzed)
+        #
+        # w = tf.get_variable(vname_root + '/kernel', shape=(num_ins, num_outs), dtype=tf.float32,
+        #                     initializer=tf.initializers.glorot_uniform)
+        # layer_outs = tf.matmul(x_in, w)
+        # if biased:
+        #     b = tf.get_variable(vname_root + '/bias', shape=num_outs, dtype=tf.float32,
+        #                         initializer=tf.initializers.glorot_uniform)
+        #     layer_outs += b
+
         curr_layer.append(layer_outs)
         layer_outs = tf.nn.relu6(layer_outs)
         curr_layer.append(layer_outs)
@@ -239,6 +265,7 @@ class RoomNet:
             layer_outs = tf.nn.dropout(layer_outs, rate=self.dropout_rate_tensor)
             curr_layer.append(layer_outs)
         self.layers.append(curr_layer)
+        self.num_dense_block_initialzed += 1
         return layer_outs
 
     def init_nn_graph(self):
@@ -248,8 +275,14 @@ class RoomNet:
         layer_outs = self.conv_block(layer_outs, 128, pooling=False)
         layer_outs = self.conv_block(layer_outs, 16, pool_ksize=4, pool_stride=2, block_depth=3)
         shp = layer_outs.shape
+
         flat_len = shp[1] * shp[2] * shp[3]
-        layer_outs = self.dense_block(tf.reshape(layer_outs, [-1, flat_len]), 32)
+        # layer_outs = tf.reshape(layer_outs, [-1, flat_len])
+        layer_outs = tf.keras.layers.Reshape((1, flat_len))(layer_outs)
+        # layer_outs = tf.keras.layers.Flatten()(layer_outs)
+
+        layer_outs = self.dense_block(layer_outs, 32)
+
         layer_outs = self.dense_block(layer_outs, 16)
         layer_outs = self.dense_block(layer_outs, 8)
         layer_outs = self.dense_block(layer_outs, self.num_classes, batch_norm=False, biased=True)
@@ -259,6 +292,7 @@ class RoomNet:
 
     def export_toco_model(self, out_path='roomnet.tflite'):
         converter = tf.lite.TFLiteConverter.from_session(self.sess, [self.x_tensor], [self.outs_softmax_op])
+        # converter = tf.lite.TFLiteConverter.from_session(self.sess, [self.x_tensor], [self.layers[1][2]])
         tflite_model = converter.convert()
         with open(out_path, 'wb') as f:
             f.write(tflite_model)

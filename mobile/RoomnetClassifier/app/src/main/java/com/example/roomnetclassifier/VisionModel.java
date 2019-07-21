@@ -26,13 +26,13 @@ import static android.opengl.GLES31.GL_SHADER_STORAGE_BUFFER;
 
 
 public class VisionModel {
-    private Activity parent_activity;
+//    private Activity parent_activity;
 //    public String model_fpath;
     public MappedByteBuffer tflite_model;
     public GpuDelegate gpuDelegate;
     public Interpreter tflite_interpreter;
-    public Tensor input_tensor, output_tensor;
-    public int input_size_bytes = 224 * 224 * 3 * 4;
+//    public Tensor input_tensor, output_tensor;
+//    public int input_size_bytes = 224 * 224 * 3 * 4;
     public Interpreter.Options tflite_options;
 
     public Interpreter.Options options;

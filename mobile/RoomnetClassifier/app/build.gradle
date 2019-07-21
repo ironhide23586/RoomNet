@@ -17,18 +17,22 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-    defaultConfig {
-        ndk {
-            abiFilters 'armeabi-v7a', 'arm64-v8a'
-        }
-    }
-}
+//    defaultConfig {
+//        ndk {
+//            abiFilters 'armeabi-v7a', 'arm64-v8a'
+//        }
+//    }
 
-android {
     aaptOptions {
         noCompress "tflite"
     }
+
+    compileOptions {
+        sourceCompatibility = '1.8'
+        targetCompatibility = '1.8'
+    }
 }
+
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
@@ -38,9 +42,11 @@ dependencies {
 //    implementation 'org.tensorflow:tensorflow-lite:1.14.0'
 //    implementation 'org.tensorflow:tensorflow-lite-gpu:1.14.0'
 
-    // Build off of nightly TensorFlow Lite
     implementation 'org.tensorflow:tensorflow-lite:0.0.0-nightly'
     implementation 'org.tensorflow:tensorflow-lite-gpu:0.0.0-nightly'
+
+//    implementation 'org.tensorflow:tensorflow-lite:0.0.0-experimental'
+//    implementation 'org.tensorflow:tensorflow-lite:0.0.0-gpu-experimental'
 
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.2.0'

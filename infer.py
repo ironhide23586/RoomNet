@@ -92,6 +92,8 @@ if __name__ == '__main__':
     nn.load(INPUT_MODEL_PATH)
     nn.export_toco_model('./mobile/RoomnetClassifier/app/src/main/assets/roomnet.tflite')
 
+    classify_im_dir(nn, INPUT_IMAGES_DIR)
+
     # nn = RoomNet(mobile_mode=True)
     # nn.load_tflite()
     #

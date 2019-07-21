@@ -2,14 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="96985683-d6bc-4d04-a7d9-84697103ee1a" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/java/com/example/roomnetclassifier/VisionModel.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/infer.py" beforeDir="false" afterPath="$PROJECT_DIR$/infer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/RoomnetClassifier/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/RoomnetClassifier/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/AndroidManifest.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/java/com/example/roomnetclassifier/CameraActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/java/com/example/roomnetclassifier/CameraActivity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/java/com/example/roomnetclassifier/CameraPreview.java" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/java/com/example/roomnetclassifier/CameraPreview.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/res/layout/activity_main.xml" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/res/layout/activity_main.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/assets/roomnet.tflite" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/assets/roomnet.tflite" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/java/com/example/roomnetclassifier/MyGLRenderer.java" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/java/com/example/roomnetclassifier/MyGLRenderer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/java/com/example/roomnetclassifier/VisionModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/mobile/RoomnetClassifier/app/src/main/java/com/example/roomnetclassifier/VisionModel.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/network.py" beforeDir="false" afterPath="$PROJECT_DIR$/network.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -37,8 +36,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/legacy_plotter.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="17">
-              <caret line="1" column="21" selection-start-line="1" selection-start-column="21" selection-end-line="1" selection-end-column="21" />
+            <state relative-caret-position="194">
+              <caret line="26" column="20" selection-start-line="26" selection-start-column="20" selection-end-line="26" selection-end-column="20" />
             </state>
           </provider>
         </entry>
@@ -46,8 +45,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/network.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="369">
-              <caret line="266" column="70" selection-start-line="266" selection-start-column="70" selection-end-line="266" selection-end-column="70" />
+            <state relative-caret-position="161">
+              <caret line="275" column="96" lean-forward="true" selection-start-line="275" selection-start-column="96" selection-end-line="275" selection-end-column="96" />
             </state>
           </provider>
         </entry>
@@ -55,8 +54,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/infer.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="224">
-              <caret line="91" column="29" selection-start-line="91" selection-start-column="29" selection-end-line="91" selection-end-column="29" />
+            <state relative-caret-position="203">
+              <caret line="94" selection-start-line="94" selection-end-line="94" />
             </state>
           </provider>
         </entry>
@@ -66,24 +65,6 @@
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="153">
               <caret line="9" selection-start-line="9" selection-end-line="9" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/val_list.txt">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="493">
-              <caret line="29" column="43" selection-start-line="29" selection-start-column="43" selection-end-line="29" selection-end-column="43" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/train.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state>
-              <caret column="3" selection-start-column="3" selection-end-column="3" />
             </state>
           </provider>
         </entry>
@@ -139,8 +120,8 @@
         <option value="$PROJECT_DIR$/train.py" />
         <option value="$PROJECT_DIR$/generator.py" />
         <option value="$PROJECT_DIR$/legacy_plotter.py" />
-        <option value="$PROJECT_DIR$/network.py" />
         <option value="$PROJECT_DIR$/infer.py" />
+        <option value="$PROJECT_DIR$/network.py" />
       </list>
     </option>
   </component>
@@ -154,7 +135,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -211,6 +191,7 @@
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -342,11 +323,12 @@
       <workItem from="1563224117808" duration="222000" />
       <workItem from="1563469474815" duration="3919000" />
       <workItem from="1563597385858" duration="1656000" />
+      <workItem from="1563725981719" duration="9469000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="83919000" />
+    <option name="totallyTimeSpent" value="93388000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -359,15 +341,14 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-7" y="-7" width="1721" height="935" extended-state="6" />
-    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.16897173" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.17077571" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.24129353" />
-      <window_info active="true" anchor="bottom" id="Debug" order="3" sideWeight="0.49969932" visible="true" weight="0.34452736" />
+      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.49969932" weight="0.39179105" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.329602" />
@@ -420,13 +401,18 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/infer.py</url>
-          <line>99</line>
+          <line>101</line>
           <option name="timeStamp" value="10" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/infer.py</url>
-          <line>92</line>
-          <option name="timeStamp" value="11" />
+          <line>94</line>
+          <option name="timeStamp" value="14" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/network.py</url>
+          <line>283</line>
+          <option name="timeStamp" value="23" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
@@ -435,7 +421,7 @@
     <SUITE FILE_PATH="coverage/RoomNet$plot.coverage" NAME="plot Coverage Results" MODIFIED="1562655783115" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RoomNet$train.coverage" NAME="train Coverage Results" MODIFIED="1562579456701" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RoomNet$main.coverage" NAME="main Coverage Results" MODIFIED="1562459813245" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/RoomNet$infer.coverage" NAME="infer Coverage Results" MODIFIED="1563597608059" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/RoomNet$infer.coverage" NAME="infer Coverage Results" MODIFIED="1563737563628" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RoomClassifier$main.coverage" NAME="main Coverage Results" MODIFIED="1561331333859" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="editorHistoryManager">
@@ -485,13 +471,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../../AppData/Local/Programs/Python/Python37/Lib/site-packages/tensorflow/python/ops/nn_ops.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="49317">
-          <caret line="2931" column="4" selection-start-line="2931" selection-start-column="4" selection-end-line="2931" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/../../AppData/Local/Programs/Python/Python37/Lib/shutil.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="3825">
@@ -520,20 +499,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/legacy_plotter.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="17">
-          <caret line="1" column="21" selection-start-line="1" selection-start-column="21" selection-end-line="1" selection-end-column="21" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/plotter.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="153">
-          <caret line="9" selection-start-line="9" selection-end-line="9" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/val_list.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="493">
@@ -558,17 +523,80 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/../../AppData/Local/Programs/Python/Python37/Lib/site-packages/tensorflow/python/ops/image_ops_impl.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="139">
+          <caret line="948" column="4" selection-start-line="948" selection-start-column="4" selection-end-line="948" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../AppData/Local/Programs/Python/Python37/Lib/site-packages/tensorflow/python/ops/nn_ops.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="154">
+          <caret line="2688" column="4" selection-start-line="2688" selection-start-column="4" selection-end-line="2688" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/plotter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="153">
+          <caret line="9" selection-start-line="9" selection-end-line="9" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/legacy_plotter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="194">
+          <caret line="26" column="20" selection-start-line="26" selection-start-column="20" selection-end-line="26" selection-end-column="20" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.PyCharm2019.1/system/python_stubs/1427589714/builtins.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-566">
+          <caret line="5280" column="8" selection-start-line="5280" selection-start-column="8" selection-end-line="5280" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../AppData/Local/Programs/Python/Python37/Lib/site-packages/tensorflow/python/layers/core.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="188">
+          <caret line="97" column="7" selection-start-line="97" selection-start-column="7" selection-end-line="97" selection-end-column="7" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../AppData/Local/Programs/Python/Python37/Lib/site-packages/tensorflow/python/ops/variable_scope.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="154">
+          <caret line="847" selection-start-line="847" selection-end-line="847" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../AppData/Local/Programs/Python/Python37/Lib/site-packages/tensorflow/python/framework/ops.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="147">
+          <caret line="3993" selection-start-line="3993" selection-end-line="3993" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../AppData/Local/Programs/Python/Python37/Lib/site-packages/tensorflow/python/ops/variables.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-326">
+          <caret line="1222" column="6" selection-start-line="1222" selection-start-column="6" selection-end-line="1222" selection-end-column="6" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/infer.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="224">
-          <caret line="91" column="29" selection-start-line="91" selection-start-column="29" selection-end-line="91" selection-end-column="29" />
+        <state relative-caret-position="203">
+          <caret line="94" selection-start-line="94" selection-end-line="94" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/network.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="369">
-          <caret line="266" column="70" selection-start-line="266" selection-start-column="70" selection-end-line="266" selection-end-column="70" />
+        <state relative-caret-position="161">
+          <caret line="275" column="96" lean-forward="true" selection-start-line="275" selection-start-column="96" selection-end-line="275" selection-end-column="96" />
         </state>
       </provider>
     </entry>
