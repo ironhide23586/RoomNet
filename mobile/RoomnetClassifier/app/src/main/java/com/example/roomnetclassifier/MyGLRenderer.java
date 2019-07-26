@@ -24,16 +24,9 @@ import javax.microedition.khronos.opengles.GL10;
 
 public class MyGLRenderer implements GLSurfaceView.Renderer {
 
-//    public MappedByteBuffer tflite_model;
-//    public GpuDelegate gpuDelegate;
-//    public Interpreter tflite_interpreter;
-//    public Interpreter.Options tflite_options;
-//    public AssetFileDescriptor tfliteModelFileDescriptor;
-
     VisionModel tfliteModel;
 
     public MyGLRenderer(AssetFileDescriptor fd) throws IOException{
-//        tfliteModelFileDescriptor = fd;
         tfliteModel = new VisionModel(fd);
     }
 
@@ -47,34 +40,5 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 
     public void onSurfaceChanged(GL10 unused, int width, int height){
         GLES20.glViewport(0, 0, width, height);
-
-//        EGLContext eglContext = eglGetCurrentContext();
-//        if (eglContext.equals(EGL_NO_CONTEXT)) {
-//            tfliteModelFileDescriptor = null;
-//        }
-
-//        try {
-//            tflite_model = loadModelFile();
-//        }
-//        catch (IOException e){
-//            tfliteModelFileDescriptor = null;
-//        }
-//        tflite_options = new Interpreter.Options();
-//        gpuDelegate = new GpuDelegate();
-//        tflite_options.addDelegate(gpuDelegate);
-//
-////        tflite_interpreter = new Interpreter(tflite_model, tflite_options);
-//        tflite_interpreter = new Interpreter(tflite_model);
-//        tflite_interpreter.modifyGraphWithDelegate(gpuDelegate);
     }
-
-//    private MappedByteBuffer loadModelFile() throws IOException {
-//        FileInputStream inputStream = new FileInputStream(tfliteModelFileDescriptor.getFileDescriptor());
-//        FileChannel fileChannel = inputStream.getChannel();
-//        long startOffset = tfliteModelFileDescriptor.getStartOffset();
-//        long declaredLength = tfliteModelFileDescriptor.getDeclaredLength();
-//        MappedByteBuffer buffer_out = fileChannel.map(FileChannel.MapMode.READ_ONLY,
-//                startOffset, declaredLength);
-//        return buffer_out;
-//    }
 }

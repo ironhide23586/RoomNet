@@ -2,6 +2,7 @@ package com.example.roomnetclassifier;
 
 import android.content.Context;
 
+import android.content.res.AssetFileDescriptor;
 import android.hardware.Camera;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -15,12 +16,18 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private Camera.PreviewCallback cb;
     private VisionModel visionModel;
 
-    public CameraPreview(Context context, Camera camera) {
+    public CameraPreview(Context context, Camera camera, AssetFileDescriptor fd) {
         super(context);
         mCamera = camera;
 
         mHolder = getHolder();
         mHolder.addCallback(this);
+        try {
+            visionModel = new VisionModel(fd);
+        }
+        catch (IOException e){
+            int k = 0;
+        }
 
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS); // deprecated in new Android
         cb = new Camera.PreviewCallback() {

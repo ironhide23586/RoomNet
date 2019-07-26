@@ -121,7 +121,9 @@ class RoomNet:
             else:
                 print('No model found to restore from, initializing random weights')
                 return
+
         self.restorer.restore(self.sess, model_path)
+
         if not self.optimized_inference:
             step_assign_op = tf.assign(self.step_ph, self.start_step)
             self.sess.run(step_assign_op)
@@ -274,14 +276,23 @@ class RoomNet:
         layer_outs = self.conv_block(layer_outs, 64, pool_ksize=4, pool_stride=2, block_depth=2)
         layer_outs = self.conv_block(layer_outs, 128, pooling=False)
         layer_outs = self.conv_block(layer_outs, 16, pool_ksize=4, pool_stride=2, block_depth=3)
-        shp = layer_outs.shape
+        # shp = layer_outs.shape
 
-        flat_len = shp[1] * shp[2] * shp[3]
-        # layer_outs = tf.reshape(layer_outs, [-1, flat_len])
-        layer_outs = tf.keras.layers.Reshape((1, flat_len))(layer_outs)
+        # flat_len = shp[1] * shp[2] * shp[3]
+        # # layer_outs = tf.reshape(layer_outs, [-1, flat_len])
+        # layer_outs = tf.keras.layers.Reshape((1, flat_len))(layer_outs)
         # layer_outs = tf.keras.layers.Flatten()(layer_outs)
 
-        layer_outs = self.dense_block(layer_outs, 32)
+        reshape_kernel = np.zeros([2, 2, 16, 64])
+        for i in range(64):
+            src = reshape_kernel[:, :, :, i].flatten()
+            src[i] = 1
+            reshape_kernel[:, :, :, i] = src.reshape([2, 2, 16])
+
+        w = tf.constant(reshape_kernel, dtype=tf.float32)
+        layer_outs = tf.nn.conv2d(layer_outs, w, [1, 1, 1, 1], "VALID")
+
+        layer_outs = tf.reshape(self.dense_block(layer_outs, 32), [-1, 32])
 
         layer_outs = self.dense_block(layer_outs, 16)
         layer_outs = self.dense_block(layer_outs, 8)

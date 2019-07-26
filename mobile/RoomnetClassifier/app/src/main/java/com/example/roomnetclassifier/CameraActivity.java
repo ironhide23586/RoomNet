@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.AssetFileDescriptor;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.widget.FrameLayout;
@@ -18,7 +19,8 @@ public class CameraActivity extends Activity {
     private Camera mCamera;
     private CameraPreview mPreview;
     private static final int CAMERA_REQUEST_CODE = 100;
-    private VisionModel visionModel;
+//    private VisionModel visionModel;
+    private AssetFileDescriptor tfliteModelFd;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -33,8 +35,14 @@ public class CameraActivity extends Activity {
         }
 
         mCamera = getCameraInstance();
+        try {
+            tfliteModelFd = this.getAssets().openFd("roomnet.tflite");
+        }
+        catch (IOException e) {
+            int k = 0;
+        }
 
-        mPreview = new CameraPreview(this, mCamera);
+        mPreview = new CameraPreview(this, mCamera, tfliteModelFd);
         FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
         preview.addView(mPreview);
 

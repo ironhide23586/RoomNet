@@ -28,10 +28,11 @@ TRAIN_BATCH_SIZE = 45
 TRAIN_STEPS = 100000
 SAVE_FREQ = 100
 LEARN_RATE = 2e-4
-DROPOUT_ENABLED = True
+DROPOUT_ENABLED = False
 DROPOUT_RATE = .35
 L2_REGULARIZATION_COEFF = 6e-2
-UPDATE_BATCHNORM_MOVING_VARS = False
+UPDATE_BATCHNORM_MOVING_VARS = True
+COMPUTE_BN_MEAN_VAR = True
 
 
 def extract_fpaths(data_dir):
@@ -97,7 +98,7 @@ if __name__ == '__main__':
     nn = RoomNet(num_classes=6, im_side=IMG_SIDE, num_steps=TRAIN_STEPS, learn_rate=LEARN_RATE,
                  dropout_rate=DROPOUT_RATE, l2_regularizer_coeff=L2_REGULARIZATION_COEFF,
                  dropout_enabled=DROPOUT_ENABLED, update_batchnorm_means_vars=UPDATE_BATCHNORM_MOVING_VARS,
-                 compute_bn_mean_var=False)
+                 compute_bn_mean_var=COMPUTE_BN_MEAN_VAR)
     nn.init()
     nn.load()
     if os.path.isfile(TRAIN_STATS_FILE):
