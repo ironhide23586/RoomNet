@@ -43,23 +43,13 @@ public class CameraActivity extends Activity {
         }
 
         mPreview = new CameraPreview(this, mCamera, tfliteModelFd);
-        FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
+        FrameLayout preview = findViewById(R.id.camera_preview);
         preview.addView(mPreview);
-
-//        String modelPath = "roomnet.tflite";
-//        try {
-//            visionModel = new VisionModel(this, modelPath);
-//        }
-//        catch (IOException e) {
-//            int k = 0;
-//        }
-//        int k = 0;
     }
 
 
     private boolean checkCameraHardware(Context context) {
         if (context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)) {
-
             return true;
         }
         else {

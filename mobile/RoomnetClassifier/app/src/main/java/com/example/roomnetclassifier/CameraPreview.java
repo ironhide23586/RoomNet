@@ -3,39 +3,66 @@ package com.example.roomnetclassifier;
 import android.content.Context;
 
 import android.content.res.AssetFileDescriptor;
+import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import java.io.IOException;
+import java.util.List;
 
-public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
+public class CameraPreview extends SurfaceView
+        implements SurfaceHolder.Callback {
     private SurfaceHolder mHolder;
     private Camera mCamera;
-    private Camera.PreviewCallback cb;
     private VisionModel visionModel;
+
+    private int[] rgbBytes = null;
+    private byte[][] yuvBytes = new byte[3][];
+    public int previewHeight;
+    public int previewWidth;
+    public boolean isBusy;
+    private Camera.Parameters camParams;
+    private Camera.Size previewSize;
+    private List<Integer> supportedPreviewFormats;
+    private int currentPreviewFormat;
+
+    private Camera.PreviewCallback imageListener = new Camera.PreviewCallback() {
+        @Override
+        public void onPreviewFrame(byte[] bytes, Camera camera) {
+            isBusy = true;
+
+            isBusy = false;
+        }
+    };
 
     public CameraPreview(Context context, Camera camera, AssetFileDescriptor fd) {
         super(context);
         mCamera = camera;
-
         mHolder = getHolder();
         mHolder.addCallback(this);
         try {
             visionModel = new VisionModel(fd);
-        }
-        catch (IOException e){
+        } catch (IOException e) {
             int k = 0;
         }
 
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS); // deprecated in new Android
-        cb = new Camera.PreviewCallback() {
-            @Override
-            public void onPreviewFrame(byte[] bytes, Camera camera) {
-                int k = 0;
-            }
-        };
+
+        if (rgbBytes == null) {
+            camParams = camera.getParameters();
+            previewSize = camParams.getPreviewSize();
+            supportedPreviewFormats = camParams.getSupportedPreviewFormats();
+            camParams.setPreviewFormat(ImageFormat.YV12);
+            currentPreviewFormat = camParams.getPreviewFormat();
+
+            previewHeight = previewSize.height;
+            previewWidth = previewSize.width;
+            rgbBytes = new int[previewWidth * previewHeight];
+        }
+
+        mCamera.setPreviewCallback(imageListener);
     }
 
     public void surfaceCreated(SurfaceHolder holder) {
@@ -70,7 +97,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         // Restart preview
         try {
             mCamera.setPreviewDisplay(holder);
-            mCamera.setPreviewCallback(cb);
+            mCamera.setPreviewCallback(imageListener);
             mCamera.startPreview();
         }
         catch (Exception e) {

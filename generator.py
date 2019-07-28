@@ -7,15 +7,14 @@ I'm not responsible if your machine catches fire.
 '''
 
 
-import itertools
 import logging
 from threading import Thread
 from queue import Queue
 import time
-import os
 
 import numpy as np
 import cv2
+from PIL import Image
 
 
 class TrainFeeder:
@@ -83,6 +82,8 @@ class TrainFeeder:
         else:
             x_pp = self.center_crop(x)
         x_pp = cv2.resize(x_pp, (self.im_side, self.im_side))
+        angle = np.random.uniform(0, 360)
+        x_pp = np.array(Image.fromarray(x_pp).rotate(angle))
         return x_pp, y
 
     def fpath2data(self, batch_fpaths):
