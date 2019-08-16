@@ -91,9 +91,9 @@ def extract_fpaths(data_dir):
 if __name__ == '__main__':
     train_fpaths, val_fpaths = extract_fpaths(DATA_DIR)
     train_data_reader = TrainFeeder(train_fpaths, batch_size=TRAIN_BATCH_SIZE, batches_per_queue=40, shuffle=True,
-                                    im_side=IMG_SIDE, random_crop=True)
+                                    im_side=IMG_SIDE, random_crop=True, preprocess=True)
     val_data_reader = TrainFeeder(val_fpaths, batch_size=64, batches_per_queue=10, shuffle=False,
-                                  im_side=IMG_SIDE, random_crop=False)
+                                  im_side=IMG_SIDE, random_crop=False, preprocess=False)
 
     nn = RoomNet(num_classes=6, im_side=IMG_SIDE, num_steps=TRAIN_STEPS, learn_rate=LEARN_RATE,
                  dropout_rate=DROPOUT_RATE, l2_regularizer_coeff=L2_REGULARIZATION_COEFF,

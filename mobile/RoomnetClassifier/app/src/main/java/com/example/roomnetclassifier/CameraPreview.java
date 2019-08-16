@@ -9,6 +9,8 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 
@@ -32,6 +34,11 @@ public class CameraPreview extends SurfaceView
         @Override
         public void onPreviewFrame(byte[] bytes, Camera camera) {
             isBusy = true;
+
+            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream('im_cam.bytes'));
+            bos.write(fileBytes);
+            bos.flush();
+            bos.close();
 
             isBusy = false;
         }
