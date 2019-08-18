@@ -11,15 +11,18 @@ I'm not responsible if your machine catches fire.
 import os
 from glob import glob
 import json
+from multiprocessing import Pool, cpu_count
 
 import numpy as np
+from tqdm import tqdm
+import cv2
 
 from generator import TrainFeeder
 from network import RoomNet
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
 
-DATA_DIR = './REI-Dataset'
+DATA_DIR = './data/MIT-Indoors'
 TRAIN_LIST_FPATH = 'train_list.txt'
 VAL_LIST_FPATH = 'val_list.txt'
 TRAIN_STATS_FILE = 'all_train_stats.json'
@@ -32,7 +35,18 @@ LEARN_RATE = 2e-4
 DROPOUT_ENABLED = True
 DROPOUT_RATE = .35
 L2_REGULARIZATION_COEFF = 6e-2
-UPDATE_BATCHNORM_MOVING_VARS = False
+UPDATE_BATCHNORM_MOVING_VARS = True
+COMPUTE_BN_MEAN_VAR = True
+
+
+def remove_invalid_fpaths(fpaths):
+    legit_fpaths = []
+    print('Filtering label', fpaths[0].split(os.sep)[-2])
+    for i in range(len(fpaths)):
+        im = cv2.imread(fpaths[i])
+        if im is not None:
+            legit_fpaths.append(fpaths[i])
+    return legit_fpaths
 
 
 def extract_fpaths(data_dir):
@@ -49,14 +63,22 @@ def extract_fpaths(data_dir):
     class_sizes = []
     labels = []
     name_id_mappings = {}
+    p = Pool(cpu_count())
+    args = []
+    for i in range(len(class_dirs)):
+        args.append(glob(class_dirs[i] + '/*'))
+    class_fpaths_dirwise = p.map(remove_invalid_fpaths, args)
+    p.close()
     for i in range(len(class_dirs)):
         class_dir = class_dirs[i]
-        class_fpaths = glob(class_dir + '/*')
+        # class_fpaths = remove_invalid_fpaths(glob(class_dir + '/*'))
+        class_fpaths = class_fpaths_dirwise[i]
         key = class_dir.split(os.sep)[-1]
         path_mappings[key] = class_fpaths
         class_sizes.append(len(class_fpaths))
         labels.append(key)
         name_id_mappings[key] = i
+    json.dump(name_id_mappings, open('label_mappings.json', 'w'), indent=4, sort_keys=True)
     smallest_class_id = np.argmin(class_sizes)
     smallest_class_size = class_sizes[smallest_class_id]
     train_path_mappings = {}
@@ -95,18 +117,18 @@ if __name__ == '__main__':
     val_data_reader = TrainFeeder(val_fpaths, batch_size=64, batches_per_queue=10, shuffle=False,
                                   im_side=IMG_SIDE, random_crop=False)
 
-    nn = RoomNet(num_classes=6, im_side=IMG_SIDE, num_steps=TRAIN_STEPS, learn_rate=LEARN_RATE,
+    nn = RoomNet(num_classes=67, im_side=IMG_SIDE, num_steps=TRAIN_STEPS, learn_rate=LEARN_RATE,
                  dropout_rate=DROPOUT_RATE, l2_regularizer_coeff=L2_REGULARIZATION_COEFF,
                  dropout_enabled=DROPOUT_ENABLED, update_batchnorm_means_vars=UPDATE_BATCHNORM_MOVING_VARS,
-                 compute_bn_mean_var=False)
+                 compute_bn_mean_var=COMPUTE_BN_MEAN_VAR)
     nn.init()
-    nn.load()
+    nn.load('all_trained_models/trained_models_0/roomnet--0.8831018518518519--193800')
     if os.path.isfile(TRAIN_STATS_FILE):
         all_train_stats = json.load(open(TRAIN_STATS_FILE, 'r'))
     else:
         all_train_stats = []
     for train_iter in range(nn.start_step, nn.start_step + TRAIN_STEPS):
-        if train_iter % SAVE_FREQ == 0:# and train_iter > nn.start_step:
+        if train_iter % SAVE_FREQ == 0:  # and train_iter > nn.start_step:
             x_val, y_val = val_data_reader.dequeue()
             y_vals = list(y_val)
             y_preds = []

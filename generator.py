@@ -128,11 +128,11 @@ class TrainFeeder:
         start_idx = (self.batch_iters - 1) * self.batch_size
         end_idx = start_idx + self.batch_size
         self.batch_fpaths = self.train_fpaths[start_idx:end_idx]
-        batch_data_x, batch_data_y, batch_data_x_fpaths = self.fpath2data(self.batch_fpaths)
-        # try:
-        #     batch_data_x, batch_data_y, batch_data_x_fpaths = self.fpath2data(self.batch_fpaths)
-        # except:
-        #     print(self.batch_fpaths)
+        # batch_data_x, batch_data_y, batch_data_x_fpaths = self.fpath2data(self.batch_fpaths)
+        try:
+            batch_data_x, batch_data_y, batch_data_x_fpaths = self.fpath2data(self.batch_fpaths)
+        except:
+            print(self.batch_fpaths)
         return batch_data_x, batch_data_y, batch_data_x_fpaths, train_state
 
     def __queue_filler_process(self):
