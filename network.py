@@ -71,7 +71,8 @@ class RoomNet:
         self.outs_softmax_op = tf.nn.softmax(self.out_op)
         self.outs_final = tf.argmax(self.outs_softmax_op, axis=-1)
 
-        self.restore_excluded_vars += [v for v in tf.all_variables() if 'Adam' in v.name or 'power' in v.name]
+        # self.restore_excluded_vars += [v for v in tf.all_variables() if 'Adam' in v.name or 'power' in v.name]
+        self.restore_excluded_vars = []
 
         self.vars_to_keep = [v for v in tf.global_variables() if v not in self.unsaved_vars]
         self.vars_to_restore = [v for v in self.vars_to_keep if v not in self.restore_excluded_vars]
