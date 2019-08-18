@@ -30,8 +30,8 @@ IMG_SIDE = 224
 
 TRAIN_BATCH_SIZE = 45
 TRAIN_STEPS = 100000
-SAVE_FREQ = 100
-LEARN_RATE = 2e-4
+SAVE_FREQ = 1500
+LEARN_RATE = 2e-3
 DROPOUT_ENABLED = True
 DROPOUT_RATE = .35
 L2_REGULARIZATION_COEFF = 6e-2
@@ -113,22 +113,23 @@ def extract_fpaths(data_dir):
 if __name__ == '__main__':
     train_fpaths, val_fpaths = extract_fpaths(DATA_DIR)
     train_data_reader = TrainFeeder(train_fpaths, batch_size=TRAIN_BATCH_SIZE, batches_per_queue=40, shuffle=True,
-                                    im_side=IMG_SIDE, random_crop=True)
+                                    im_side=IMG_SIDE, random_crop=True, preprocess=True)
     val_data_reader = TrainFeeder(val_fpaths, batch_size=64, batches_per_queue=10, shuffle=False,
-                                  im_side=IMG_SIDE, random_crop=False)
+                                  im_side=IMG_SIDE, random_crop=False, preprocess=False)
 
     nn = RoomNet(num_classes=67, im_side=IMG_SIDE, num_steps=TRAIN_STEPS, learn_rate=LEARN_RATE,
                  dropout_rate=DROPOUT_RATE, l2_regularizer_coeff=L2_REGULARIZATION_COEFF,
                  dropout_enabled=DROPOUT_ENABLED, update_batchnorm_means_vars=UPDATE_BATCHNORM_MOVING_VARS,
                  compute_bn_mean_var=COMPUTE_BN_MEAN_VAR)
     nn.init()
-    nn.load('all_trained_models/trained_models_0/roomnet--0.8831018518518519--193800')
+    # nn.load('all_trained_models/trained_models_0/roomnet--0.8831018518518519--193800')
+    nn.load()
     if os.path.isfile(TRAIN_STATS_FILE):
         all_train_stats = json.load(open(TRAIN_STATS_FILE, 'r'))
     else:
         all_train_stats = []
     for train_iter in range(nn.start_step, nn.start_step + TRAIN_STEPS):
-        if train_iter % SAVE_FREQ == 0:  # and train_iter > nn.start_step:
+        if train_iter % SAVE_FREQ == 0 and train_iter > nn.start_step:
             x_val, y_val = val_data_reader.dequeue()
             y_vals = list(y_val)
             y_preds = []
