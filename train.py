@@ -22,7 +22,9 @@ from network import RoomNet
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
 
-DATA_DIR = './data/MIT-Indoors'
+# DATA_DIR = './data/REI-Dataset-reduced'
+DATA_DIR = './data/REI-Dataset'
+
 TRAIN_LIST_FPATH = 'train_list.txt'
 VAL_LIST_FPATH = 'val_list.txt'
 TRAIN_STATS_FILE = 'all_train_stats.json'
@@ -30,13 +32,13 @@ IMG_SIDE = 224
 
 TRAIN_BATCH_SIZE = 45
 TRAIN_STEPS = 100000
-SAVE_FREQ = 1500
-LEARN_RATE = 2e-2
-DROPOUT_ENABLED = True
+SAVE_FREQ = 10
+LEARN_RATE = 2e-4
+DROPOUT_ENABLED = False
 DROPOUT_RATE = .35
 L2_REGULARIZATION_COEFF = 6e-2
-UPDATE_BATCHNORM_MOVING_VARS = True
-COMPUTE_BN_MEAN_VAR = True
+UPDATE_BATCHNORM_MOVING_VARS = False
+COMPUTE_BN_MEAN_VAR = False
 
 
 def remove_invalid_fpaths(fpaths):
@@ -117,12 +119,12 @@ if __name__ == '__main__':
     val_data_reader = TrainFeeder(val_fpaths, batch_size=64, batches_per_queue=10, shuffle=False,
                                   im_side=IMG_SIDE, random_crop=False, preprocess=False)
 
-    nn = RoomNet(num_classes=67, im_side=IMG_SIDE, num_steps=TRAIN_STEPS, learn_rate=LEARN_RATE,
+    nn = RoomNet(num_classes=6, im_side=IMG_SIDE, num_steps=TRAIN_STEPS, learn_rate=LEARN_RATE,
                  dropout_rate=DROPOUT_RATE, l2_regularizer_coeff=L2_REGULARIZATION_COEFF,
                  dropout_enabled=DROPOUT_ENABLED, update_batchnorm_means_vars=UPDATE_BATCHNORM_MOVING_VARS,
                  compute_bn_mean_var=COMPUTE_BN_MEAN_VAR)
     nn.init()
-    # nn.load('all_trained_models/trained_models_0/roomnet--0.8831018518518519--193800')
+    # nn.load('final_model/roomnet')
     nn.load()
     if os.path.isfile(TRAIN_STATS_FILE):
         all_train_stats = json.load(open(TRAIN_STATS_FILE, 'r'))
