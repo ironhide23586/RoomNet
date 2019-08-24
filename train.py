@@ -124,14 +124,14 @@ if __name__ == '__main__':
                  dropout_enabled=DROPOUT_ENABLED, update_batchnorm_means_vars=UPDATE_BATCHNORM_MOVING_VARS,
                  compute_bn_mean_var=COMPUTE_BN_MEAN_VAR)
     nn.init()
-    # nn.load('final_model/roomnet')
-    nn.load()
+    nn.load('final_model/roomnet')
+    # nn.load()
     if os.path.isfile(TRAIN_STATS_FILE):
         all_train_stats = json.load(open(TRAIN_STATS_FILE, 'r'))
     else:
         all_train_stats = []
     for train_iter in range(nn.start_step, nn.start_step + TRAIN_STEPS):
-        if train_iter % SAVE_FREQ == 0 and train_iter > nn.start_step:
+        if train_iter % SAVE_FREQ == 0:  # and train_iter > nn.start_step:
             x_val, y_val = val_data_reader.dequeue()
             y_vals = list(y_val)
             y_preds = []
