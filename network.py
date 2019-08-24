@@ -40,7 +40,7 @@ class RoomNet:
         self.sess = None
         if self.optimized_inference:
             self.dropout_enabled = False
-            self.out_op, _, _ = self.init_nn_graph()
+            self.out_op, _, _, _ = self.init_nn_graph()
             self.outs_softmax_op = tf.nn.softmax(self.out_op)
             self.outs_final = tf.argmax(self.outs_softmax_op, axis=-1)
             self.vars_to_keep = [v for v in tf.global_variables() if v not in self.unsaved_vars]
@@ -52,7 +52,7 @@ class RoomNet:
         if self.dropout_enabled:
             self.dropout_rate = dropout_rate
             self.dropout_rate_tensor = tf.placeholder(tf.float32, shape=())
-        self.out_op, self.trainable_vars, self.stop_grad_vars = self.init_nn_graph()
+        self.out_op, self.trainable_vars, self.stop_grad_vars, self.restore_excluded_vars = self.init_nn_graph()
         self.loss_op = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.y_tensor,
                                                                       logits=self.out_op)
         l2_losses = [self.l2_regularizer_coeff * tf.nn.l2_loss(v) for v in self.trainable_vars]
@@ -71,10 +71,14 @@ class RoomNet:
         self.outs_softmax_op = tf.nn.softmax(self.out_op)
         self.outs_final = tf.argmax(self.outs_softmax_op, axis=-1)
 
+        # self.restore_excluded_vars += [v for v in tf.all_variables() if 'Adam' in v.name or 'power' in v.name]
+        # self.restore_excluded_vars = []
+
         self.vars_to_keep = [v for v in tf.global_variables() if v not in self.unsaved_vars]
+        self.vars_to_restore = [v for v in self.vars_to_keep if v not in self.restore_excluded_vars]
 
         self.saver = tf.train.Saver(max_to_keep=0, var_list=self.vars_to_keep)
-        self.restorer = tf.train.Saver(var_list=self.vars_to_keep)
+        self.restorer = tf.train.Saver(var_list=self.vars_to_restore)
         self.model_folder = 'all_trained_models/trained_models'
         if not os.path.isdir(self.model_folder):
             os.makedirs(self.model_folder)
@@ -226,11 +230,15 @@ class RoomNet:
         layer_outs = self.conv_block(layer_outs, 16, pool_ksize=4, pool_stride=2, block_depth=3)
         shp = layer_outs.shape
         flat_len = shp[1] * shp[2] * shp[3]
+        v0 = tf.all_variables()
         layer_outs = self.dense_block(tf.reshape(layer_outs, [-1, flat_len]), 32)
         layer_outs = self.dense_block(layer_outs, 16)
         layer_outs = self.dense_block(layer_outs, 8)
         layer_outs = self.dense_block(layer_outs, self.num_classes, batch_norm=False, biased=True)
+        v1 = tf.all_variables()
         trainable_vars = tf.trainable_variables()
         original_vars = []
-        return layer_outs, trainable_vars, original_vars
 
+        restore_excluded_vars = [v for v in v1 if v not in v0]
+        # restore_excluded_vars = []
+        return layer_outs, trainable_vars, original_vars, restore_excluded_vars

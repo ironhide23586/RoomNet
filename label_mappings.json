@@ -1,0 +1,8 @@
+{
+    "backyard": 0,
+    "bathroom": 1,
+    "bedroom": 2,
+    "frontyard": 3,
+    "kitchen": 4,
+    "livingRoom": 5
+}

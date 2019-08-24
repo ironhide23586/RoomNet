@@ -3,3 +3,4 @@ __pycache__/
 all_trained_models/
 final_deliverables/
 test_images/
+data/

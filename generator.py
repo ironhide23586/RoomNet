@@ -19,7 +19,7 @@ import cv2
 
 class TrainFeeder:
 
-    def __init__(self, train_fpaths, shuffle=True, batch_size=8,
+    def __init__(self, train_fpaths, shuffle=True, batch_size=8, preprocess=True,
                  batches_per_queue=40, random_crop=True, im_side=300):
         self.train_fpaths = np.array(train_fpaths)
         logging.info('Initializing TrainFeeder Object on ' + str(self.train_fpaths.shape[0]) + ' data objects')
@@ -31,6 +31,7 @@ class TrainFeeder:
         self.batch_size = batch_size
         self.epochs = 0
         self.batch_iters = 0
+        self.data_preprocess = preprocess
         self.epoch_size_total = self.train_fpaths.shape[0]
         if self.batch_size > self.epoch_size_total:
             logging.warning('Batch size exceeds epoch size, setting batch size to epoch size')
@@ -82,6 +83,13 @@ class TrainFeeder:
         else:
             x_pp = self.center_crop(x)
         x_pp = cv2.resize(x_pp, (self.im_side, self.im_side))
+        if self.data_preprocess:
+            # angle = np.random.uniform(0, 360)
+            # x_pp = np.array(Image.fromarray(x_pp).rotate(angle))
+            if np.random.uniform() > .5:
+                x_pp = np.fliplr(x_pp)
+            if np.random.uniform() > .5:
+                x_pp = np.flipud(x_pp)
         return x_pp, y
 
     def fpath2data(self, batch_fpaths):
@@ -128,11 +136,11 @@ class TrainFeeder:
         start_idx = (self.batch_iters - 1) * self.batch_size
         end_idx = start_idx + self.batch_size
         self.batch_fpaths = self.train_fpaths[start_idx:end_idx]
-        batch_data_x, batch_data_y, batch_data_x_fpaths = self.fpath2data(self.batch_fpaths)
-        # try:
-        #     batch_data_x, batch_data_y, batch_data_x_fpaths = self.fpath2data(self.batch_fpaths)
-        # except:
-        #     print(self.batch_fpaths)
+        # batch_data_x, batch_data_y, batch_data_x_fpaths = self.fpath2data(self.batch_fpaths)
+        try:
+            batch_data_x, batch_data_y, batch_data_x_fpaths = self.fpath2data(self.batch_fpaths)
+        except:
+            print(self.batch_fpaths)
         return batch_data_x, batch_data_y, batch_data_x_fpaths, train_state
 
     def __queue_filler_process(self):
