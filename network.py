@@ -94,7 +94,7 @@ class RoomNet:
         self.model_fpath_prefix = self.model_folder + '/' + 'roomnet-'
 
     def loss_function(self, y_truth, y_pred):
-        loss_op = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.y_tensor, logits=self.out_op)
+        loss_op = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y_truth, logits=y_pred)
         l2_losses = [self.l2_regularizer_coeff * tf.nn.l2_loss(v) for v in self.trainable_vars]
         reduced_loss = tf.reduce_mean(loss_op) + tf.add_n(l2_losses)
         return reduced_loss
