@@ -122,7 +122,7 @@ if __name__ == '__main__':
     nn = RoomNet(num_classes=6, im_side=IMG_SIDE, num_steps=TRAIN_STEPS, learn_rate=LEARN_RATE,
                  dropout_rate=DROPOUT_RATE, l2_regularizer_coeff=L2_REGULARIZATION_COEFF,
                  dropout_enabled=DROPOUT_ENABLED, update_batchnorm_means_vars=UPDATE_BATCHNORM_MOVING_VARS,
-                 compute_bn_mean_var=COMPUTE_BN_MEAN_VAR)
+                 compute_bn_mean_var=COMPUTE_BN_MEAN_VAR, load_training_vars=False)
     nn.init()
     nn.load('final_model/roomnet')
     # nn.load()

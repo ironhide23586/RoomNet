@@ -12,6 +12,7 @@ import os
 from glob import glob
 
 import tensorflow as tf
+from tensorflow.contrib import slim
 import numpy as np
 import cv2
 
@@ -20,7 +21,8 @@ class RoomNet:
 
     def __init__(self, num_classes, im_side=600, compute_bn_mean_var=True, start_step=0, dropout_enabled=False,
                  learn_rate=1e-4, l2_regularizer_coeff=1e-2, num_steps=10000, dropout_rate=.2,
-                 update_batchnorm_means_vars=True, optimized_inference=False, train_batch_size=32):
+                 update_batchnorm_means_vars=True, optimized_inference=False, train_batch_size=32,
+                 load_training_vars=False):
         self.num_classes = num_classes
         self.im_side = im_side
         self.compute_bn_mean_var = compute_bn_mean_var
@@ -72,8 +74,10 @@ class RoomNet:
         self.outs_softmax_op = tf.nn.softmax(self.out_op)
         self.outs_final = tf.argmax(self.outs_softmax_op, axis=-1)
 
-        self.restore_excluded_vars += [v for v in tf.all_variables() if 'Adam' in v.name or 'power' in v.name]
-        # self.restore_excluded_vars = []
+        if not load_training_vars:
+            self.restore_excluded_vars += [v for v in tf.all_variables() if 'Adam' in v.name or 'power' in v.name]
+        else:
+            self.restore_excluded_vars = []
 
         self.vars_to_keep = [v for v in tf.global_variables() if v not in self.unsaved_vars]
         self.vars_to_restore = [v for v in self.vars_to_keep if v not in self.restore_excluded_vars]
@@ -223,159 +227,43 @@ class RoomNet:
         self.layers.append(curr_layer)
         return layer_outs
 
-    def ssd_block_box_predictor(self, net, out_channels, scope_idx, optimized=False, training=True):
-        mean_var_compute = self.compute_bn_mean_var
-        batch_size = self.train_batch_size
-        print('SSDLite Box Predictor block, batch size =', batch_size)
-        net, dbg = self.ssd_block('BoxEncodingPredictor', net, out_channels, scope_idx,
-                                  optimized=optimized, training=training, mean_var_compute=mean_var_compute)
-        net = tf.reshape(net, [batch_size, -1, 1, 4])
-        return net, dbg
+    def ssd_block_box_predictor(self, net, out_channels, scope_idx):
+        net = self.ssd_block('BoxEncodingPredictor', net, out_channels, scope_idx)
+        net = tf.reshape(net, [self.train_batch_size, -1, 1, 4])
+        return net
 
-    def ssd_block_class_predictor(self, net, out_channels, scope_idx, optimized=False, training=True):
-        mean_var_compute = self.compute_bn_mean_var
-        batch_size = self.train_batch_size
-        print('SSDLite Class Predictor block, batch size =', batch_size)
-        net, dbg = ssd_block('ClassPredictor', net, out_channels, scope_idx,
-                             optimized=optimized, training=training, mean_var_compute=mean_var_compute)
-        net = tf.reshape(net, [batch_size, -1, NUM_CLASSES])
-        return net, dbg
+    def ssd_block_class_predictor(self, net, out_channels, scope_idx):
+        net = self.ssd_block('ClassPredictor', net, out_channels, scope_idx)
+        net = tf.reshape(net, [self.train_batch_size, -1, self.num_classes])
+        return net
 
-    def ssd_block(self, name, net, out_channels, scope_idx, optimized=False, training=True):
-        dbg = []
-        mean_var_compute = self.compute_bn_mean_var
-        print('--> SSD Block Batch Normalization param computation enabled? -', mean_var_compute)
-        if training:
-            net = slim.separable_conv2d(inputs=net, num_outputs=None, kernel_size=[3, 3], stride=1,
-                                        scope='BoxPredictor_' + str(scope_idx) + '/' + name + '_depthwise',
-                                        padding='SAME', depth_multiplier=1, normalizer_fn=None,
-                                        activation_fn=None, biases_initializer=None)
-            net, dbg_ = self.inference_batchnorm(net)
-            dbg += dbg_
-            net = slim.conv2d(inputs=net, num_outputs=out_channels, kernel_size=[1, 1],
-                              scope='BoxPredictor_' + str(scope_idx) + '/' + name,
-                              stride=1, activation_fn=tf.nn.relu6, normalizer_fn=slim.batch_norm)
-        else:
-            if optimized:
-                activation_op = tf.nn.relu6
-                bias_init_op = tf.initializers.zeros()
-                compute_mean_var_flag = False
-            else:
-                activation_op = None
-                bias_init_op = None
-                compute_mean_var_flag = mean_var_compute  # Disabling this will use frozen moving means & variances
+    def ssd_block(self, name, net, out_channels, scope_idx):
+        net = slim.separable_conv2d(inputs=net, num_outputs=None, kernel_size=[3, 3], stride=1,
+                                    scope='BoxPredictor_' + str(scope_idx) + '/' + name + '_depthwise',
+                                    padding='SAME', depth_multiplier=1, normalizer_fn=None,
+                                    activation_fn=None, biases_initializer=None)
+        if self.compute_bn_mean_var:
+            net = tf.layers.batch_normalization(net, training=self.compute_bn_mean_var)
+        net = slim.conv2d(inputs=net, num_outputs=out_channels, kernel_size=[1, 1],
+                          scope='BoxPredictor_' + str(scope_idx) + '/' + name,
+                          stride=1, activation_fn=tf.nn.relu6, normalizer_fn=None)
+        if self.compute_bn_mean_var:
+            net = tf.layers.batch_normalization(net, training=self.compute_bn_mean_var)
+        return net
 
-            net = slim.separable_conv2d(inputs=net, num_outputs=None, kernel_size=[3, 3],
-                                        scope='BoxPredictor_' + str(scope_idx) + '/' + name + '_depthwise',
-                                        stride=1, padding='SAME', depth_multiplier=1, normalizer_fn=None,
-                                        activation_fn=activation_op, biases_initializer=bias_init_op)
-
-            net, dbg_ = self.inference_batchnorm(net, optimized=optimized)
-            dbg += dbg_
-
-            net = slim.conv2d(inputs=net, num_outputs=out_channels, kernel_size=[1, 1],
-                              scope='BoxPredictor_' + str(scope_idx) + '/' + name,
-                              stride=1, activation_fn=activation_op, normalizer_fn=None,
-                              biases_initializer=bias_init_op)
-            net, dbg_ = self.inference_batchnorm(net, optimized=optimized, compute_mean_var=compute_mean_var_flag)
-            dbg += dbg_
-        return net, dbg
-
-    def ssdlite_nn(self, ssd_endpoints, optimized=False, training=True, num_box_points=4):
-        dbg = []
-        mean_var_compute = self.compute_bn_mean_var
-        batch_size = self.train_batch_size
-        detection_outs_all = [self.ssd_block_box_predictor(ssd_endpoints[0], num_box_points * 3, 0,
-                                                           batch_size=batch_size, optimized=optimized,
-                                                           training=training, mean_var_compute=mean_var_compute)] \
-                             + [self.ssd_block_box_predictor(ssd_endpoints[i + 1], num_box_points * 6, i + 1,
-                                                        batch_size=batch_size, optimized=optimized,
-                                                        training=training, mean_var_compute=mean_var_compute)
+    def ssdlite_nn(self, ssd_endpoints, num_box_points=4):
+        detection_outs_all = [self.ssd_block_box_predictor(ssd_endpoints[0], num_box_points * 3, 0)] \
+                             + [self.ssd_block_box_predictor(ssd_endpoints[i + 1], num_box_points * 6, i + 1)
                                 for i in range(len(ssd_endpoints[1:]))]
-
-        classification_outs_all = [self.ssd_block_class_predictor(ssd_endpoints[0], self.num_classes * 3, 0,
-                                                                  batch_size=batch_size, optimized=optimized,
-                                                                  training=training,
-                                                                  mean_var_compute=mean_var_compute)] \
-                                  + [self.ssd_block_class_predictor(ssd_endpoints[i + 1], self.num_classes * 6, i + 1,
-                                                                    batch_size=batch_size, optimized=optimized,
-                                                                    training=training,
-                                                                    mean_var_compute=mean_var_compute)
+        classification_outs_all = [self.ssd_block_class_predictor(ssd_endpoints[0], self.num_classes * 3, 0)] \
+                                  + [self.ssd_block_class_predictor(ssd_endpoints[i + 1], self.num_classes * 6, i + 1)
                                      for i in range(len(ssd_endpoints[1:]))]
-
-        detection_outs = [detection_outs_all[i][0] for i in range(len(ssd_endpoints))]
-        classification_outs = [classification_outs_all[i][0] for i in range(len(ssd_endpoints))]
-
-        detection_out = tf.concat(detection_outs, axis=1)
+        detection_out = tf.concat(detection_outs_all, axis=1)
         detection_out = tf.reshape(detection_out, [detection_out.shape[0].value, -1,
                                                    detection_out.shape[-1].value], name='detections_raw')
-        classification_out = tf.concat(classification_outs, axis=1)
-
+        classification_out = tf.concat(classification_outs_all, axis=1)
         classification_out_softmax = tf.nn.softmax(classification_out, name='classifications_raw')
-
-        for i in range(len(ssd_endpoints)):
-            dbg += detection_outs_all[i][1]
-            dbg += classification_outs_all[i][1]
-
-        return detection_out, classification_out_softmax, dbg
-
-    def inference_batchnorm(self, x_in, betas_tf=None, activation_fn=tf.nn.relu6, name_depth=2, return_debug=True,
-                            optimized=False):
-        compute_mean_var = self.compute_bn_mean_var
-        print('Initializing BatchNorm layer with params - optimized:', optimized, ', compute_mean_var:',
-              compute_mean_var)
-        print('Input ->', x_in)
-        if optimized:
-            print('#### Optimization enabled, returning input as is...')
-            if not return_debug:
-                return x_in
-            return x_in, []
-        dbg = []
-        if betas_tf is None:
-            betas_var_name = '/'.join(tf.global_variables()[-1].name.split('/')[-1 - name_depth:-1]) + '/BatchNorm/beta'
-            betas_tf = tf.get_variable(betas_var_name, [int(x_in.shape[-1])], trainable=True)
-
-            if not compute_mean_var:
-                # means_var_name = betas_var_name.replace('beta', 'moving_mean')
-                # means_tf = tf.get_variable(means_var_name, [1, int(x_in.shape[-1])], trainable=False)
-
-                # vars_var_name = betas_var_name.replace('beta', 'moving_variance')
-                # vars_tf = tf.get_variable(vars_var_name, [1, int(x_in.shape[-1])], trainable=False)
-
-                means_var_name = betas_var_name.replace('beta', 'moving_mean')
-                means_tf = tf.get_variable(means_var_name, [int(x_in.shape[-1])], trainable=False)
-
-                vars_var_name = betas_var_name.replace('beta', 'moving_variance')
-                vars_tf = tf.get_variable(vars_var_name, [int(x_in.shape[-1])], trainable=False)
-
-        if compute_mean_var:
-            x_means = tf.reduce_mean(tf.reduce_mean(x_in, axis=1), axis=1,
-                                     name=betas_var_name.replace('beta', 'computed_mean'))
-            diff = (x_in - x_means)
-            x_vars = tf.reduce_mean(tf.reduce_mean(diff * diff, axis=1), axis=1,
-                                    name=betas_var_name.replace('beta', 'computed_variance'))
-        else:
-            x_means = means_tf
-            x_vars = vars_tf
-
-        print('Layer params ---', x_means, x_vars)
-
-        dbg += [x_means, x_vars]
-
-        y = (x_in - x_means) / (tf.sqrt(x_vars) + 0.001) + betas_tf
-
-        if activation_fn is not None:
-            with tf.variable_scope(tf.global_variables()[-1].name.split('/')[0]):
-                with tf.variable_scope(tf.global_variables()[-1].name.split('/')[1]):
-                    with tf.variable_scope(tf.global_variables()[-1].name.split('/')[2]):
-                        with tf.variable_scope('BatchNorm_activation'):
-                            out = activation_fn(y)
-        else:
-            out = y
-
-        if not return_debug:
-            return out
-        return out, dbg
+        return detection_out, classification_out_softmax
 
     def init_nn_graph(self):
         layer_outs = self.conv_block(self.x_tensor, 8)
@@ -386,14 +274,15 @@ class RoomNet:
 
 
 
-        shp = layer_outs.shape
-        flat_len = shp[1] * shp[2] * shp[3]
-        v0 = tf.all_variables()
-        layer_outs = self.dense_block(tf.reshape(layer_outs, [-1, flat_len]), 32)
-        layer_outs = self.dense_block(layer_outs, 16)
-        layer_outs = self.dense_block(layer_outs, 8)
-        layer_outs = self.dense_block(layer_outs, self.num_classes, batch_norm=False, biased=True)
-        v1 = tf.all_variables()
+        # shp = layer_outs.shape
+        # flat_len = shp[1] * shp[2] * shp[3]
+        # v0 = tf.all_variables()
+        # layer_outs = self.dense_block(tf.reshape(layer_outs, [-1, flat_len]), 32)
+        # layer_outs = self.dense_block(layer_outs, 16)
+        # layer_outs = self.dense_block(layer_outs, 8)
+        # layer_outs = self.dense_block(layer_outs, self.num_classes, batch_norm=False, biased=True)
+        # v1 = tf.all_variables()
+        
         trainable_vars = tf.trainable_variables()
         original_vars = []
 

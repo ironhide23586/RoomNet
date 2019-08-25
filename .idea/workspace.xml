@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="96985683-d6bc-4d04-a7d9-84697103ee1a" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/all_train_stats.json" beforeDir="false" afterPath="$PROJECT_DIR$/all_train_stats.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/network.py" beforeDir="false" afterPath="$PROJECT_DIR$/network.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/train.py" afterDir="false" />
     </list>
@@ -206,7 +205,8 @@
       <workItem from="1566323312898" duration="965000" />
       <workItem from="1566327658932" duration="51000" />
       <workItem from="1566534934317" duration="8483000" />
-      <workItem from="1566645013921" duration="5069000" />
+      <workItem from="1566645013921" duration="5155000" />
+      <workItem from="1566727535087" duration="2115000" />
     </task>
     <servers />
   </component>
@@ -245,27 +245,27 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/network.py</url>
-          <line>382</line>
+          <line>270</line>
           <option name="timeStamp" value="50" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/network.py</url>
-          <line>381</line>
+          <line>269</line>
           <option name="timeStamp" value="51" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/network.py</url>
-          <line>383</line>
+          <line>271</line>
           <option name="timeStamp" value="52" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/network.py</url>
-          <line>384</line>
+          <line>272</line>
           <option name="timeStamp" value="53" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/network.py</url>
-          <line>389</line>
+          <line>277</line>
           <option name="timeStamp" value="54" />
         </line-breakpoint>
       </breakpoints>
