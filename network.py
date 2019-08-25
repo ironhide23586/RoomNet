@@ -30,7 +30,8 @@ class RoomNet:
         self.train_batch_size = train_batch_size
         self.x_tensor = tf.placeholder(tf.float32, shape=[None, im_side, im_side, 3],
                                        name='input_x_tensor')
-        self.layers = [self.x_tensor]
+        self.layers = []
+        self.layer_var_mappings_ordered = []
 
         self.start_step = start_step
         self.step = start_step
@@ -56,13 +57,16 @@ class RoomNet:
             self.dropout_rate = dropout_rate
             self.dropout_rate_tensor = tf.placeholder(tf.float32, shape=())
         self.out_op, self.trainable_vars, self.stop_grad_vars, self.restore_excluded_vars = self.init_nn_graph()
-        self.loss_op = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.y_tensor,
-                                                                      logits=self.out_op)
-        l2_losses = [self.l2_regularizer_coeff * tf.nn.l2_loss(v) for v in self.trainable_vars]
-        self.reduced_loss = tf.reduce_mean(self.loss_op) + tf.add_n(l2_losses)
 
+        self.layername_var_map = {}
+        for layer_params in self.layer_var_mappings_ordered:
+            for layer_data in layer_params:
+                for k, v in layer_data.items():
+                    self.layername_var_map[k] = v
+
+        self.loss_op = self.loss_function(self.y_tensor, self.out_op)
         self.opt = tf.train.AdamOptimizer(learning_rate=self.learn_rate_tf)
-        grads = tf.gradients(self.reduced_loss, self.trainable_vars, stop_gradients=self.stop_grad_vars)
+        grads = tf.gradients(self.loss_op, self.trainable_vars, stop_gradients=self.stop_grad_vars)
 
         if update_batchnorm_means_vars:
             update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
@@ -88,6 +92,12 @@ class RoomNet:
         if not os.path.isdir(self.model_folder):
             os.makedirs(self.model_folder)
         self.model_fpath_prefix = self.model_folder + '/' + 'roomnet-'
+
+    def loss_function(self, y_truth, y_pred):
+        loss_op = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.y_tensor, logits=self.out_op)
+        l2_losses = [self.l2_regularizer_coeff * tf.nn.l2_loss(v) for v in self.trainable_vars]
+        reduced_loss = tf.reduce_mean(loss_op) + tf.add_n(l2_losses)
+        return reduced_loss
 
     def init(self):
         if not self.sess:
@@ -163,12 +173,12 @@ class RoomNet:
     def train_step(self, x_in, y):
         x = ((x_in[:, :, :, [2, 1, 0]] / 255.) * 2) - 1
         if self.dropout_enabled:
-            loss, _, step_tf, lr = self.sess.run([self.reduced_loss, self.train_op, self.step_ph, self.learn_rate_tf],
+            loss, _, step_tf, lr = self.sess.run([self.loss_op, self.train_op, self.step_ph, self.learn_rate_tf],
                                                  feed_dict={self.x_tensor: x,
                                                             self.y_tensor: y,
                                                             self.dropout_rate_tensor: self.dropout_rate})
         else:
-            loss, _, step_tf, lr = self.sess.run([self.reduced_loss, self.train_op, self.step_ph, self.learn_rate_tf],
+            loss, _, step_tf, lr = self.sess.run([self.loss_op, self.train_op, self.step_ph, self.learn_rate_tf],
                                                  feed_dict={self.x_tensor: x,
                                                             self.y_tensor: y})
         self.step = step_tf
@@ -181,21 +191,32 @@ class RoomNet:
             use_bias = True
         else:
             use_bias = False
+        curr_layer_var_mappings_ordered = []
         curr_layer = []
         layer_out = x_in
         if block_depth == 1:
             make_residual = False
         for depth in range(block_depth):
+            v0 = tf.global_variables()
             layer_out = tf.layers.conv2d(layer_out, output_filters, kernel_size, strides=kernel_stride,
                                          use_bias=use_bias, activation=activation, dilation_rate=dilation,
                                          padding=padding)
+            v1 = tf.global_variables()
+            layer_vars = v1[len(v0):]
+            layer_var_mapping = {layer_out.name: layer_vars}
+            curr_layer_var_mappings_ordered.append(layer_var_mapping)
             curr_layer.append(layer_out)
             if pooling:
                 layer_out = pooling_fn(layer_out, ksize=[1, pool_ksize, pool_ksize, 1],
                                        strides=[1, pool_stride, pool_stride, 1], padding=pool_padding)
                 curr_layer.append(layer_out)
             if batch_norm:
+                v0 = tf.global_variables()
                 layer_out = tf.layers.batch_normalization(layer_out, training=self.compute_bn_mean_var)
+                v1 = tf.global_variables()
+                layer_vars = v1[len(v0):]
+                layer_var_mapping = {layer_out.name: layer_vars}
+                curr_layer_var_mappings_ordered.append(layer_var_mapping)
                 curr_layer.append(layer_out)
             if depth == 0:
                 residual_input = layer_out
@@ -204,26 +225,44 @@ class RoomNet:
             output = output + tf.image.resize_bilinear(residual_input, output.shape[1:3])
             curr_layer.append(output)
             if batch_norm:
+                v0 = tf.global_variables()
                 output = tf.layers.batch_normalization(output, training=self.compute_bn_mean_var)
+                v1 = tf.global_variables()
+                layer_vars = v1[len(v0):]
+                layer_var_mapping = {output.name: layer_vars}
+                curr_layer_var_mappings_ordered.append(layer_var_mapping)
                 curr_layer.append(output)
         if self.dropout_enabled:
             output = tf.nn.dropout(output, rate=self.dropout_rate_tensor)
             curr_layer.append(output)
+        self.layer_var_mappings_ordered.append(curr_layer_var_mappings_ordered)
         self.layers.append(curr_layer)
         return output
 
     def dense_block(self, x_in, num_outs, batch_norm=True, biased=False):
+        curr_layer_var_mappings_ordered = []
         curr_layer = []
+        v0 = tf.global_variables()
         layer_outs = tf.layers.dense(x_in, num_outs, use_bias=biased)
+        v1 = tf.global_variables()
+        layer_vars = v1[len(v0):]
+        layer_var_mapping = {layer_outs.name: layer_vars}
+        curr_layer_var_mappings_ordered.append(layer_var_mapping)
         curr_layer.append(layer_outs)
         layer_outs = tf.nn.relu6(layer_outs)
         curr_layer.append(layer_outs)
         if batch_norm:
+            v0 = tf.global_variables()
             layer_outs = tf.layers.batch_normalization(layer_outs, training=self.compute_bn_mean_var)
+            v1 = tf.global_variables()
+            layer_vars = v1[len(v0):]
+            layer_var_mapping = {layer_outs.name: layer_vars}
+            curr_layer_var_mappings_ordered.append(layer_var_mapping)
             curr_layer.append(layer_outs)
         if self.dropout_enabled:
             layer_outs = tf.nn.dropout(layer_outs, rate=self.dropout_rate_tensor)
             curr_layer.append(layer_outs)
+        self.layer_var_mappings_ordered.append(curr_layer_var_mappings_ordered)
         self.layers.append(curr_layer)
         return layer_outs
 
@@ -238,17 +277,45 @@ class RoomNet:
         return net
 
     def ssd_block(self, name, net, out_channels, scope_idx):
+        curr_layer_var_mappings_ordered = []
+        curr_layer = []
+        v0 = tf.global_variables()
         net = slim.separable_conv2d(inputs=net, num_outputs=None, kernel_size=[3, 3], stride=1,
                                     scope='BoxPredictor_' + str(scope_idx) + '/' + name + '_depthwise',
                                     padding='SAME', depth_multiplier=1, normalizer_fn=None,
                                     activation_fn=None, biases_initializer=None)
+        v1 = tf.global_variables()
+        layer_vars = v1[len(v0):]
+        layer_var_mapping = {net.name: layer_vars}
+        curr_layer_var_mappings_ordered.append(layer_var_mapping)
+        curr_layer.append(net)
         if self.compute_bn_mean_var:
+            v0 = tf.global_variables()
             net = tf.layers.batch_normalization(net, training=self.compute_bn_mean_var)
+            v1 = tf.global_variables()
+            layer_vars = v1[len(v0):]
+            layer_var_mapping = {net.name: layer_vars}
+            curr_layer_var_mappings_ordered.append(layer_var_mapping)
+            curr_layer.append(net)
+        v0 = tf.global_variables()
         net = slim.conv2d(inputs=net, num_outputs=out_channels, kernel_size=[1, 1],
                           scope='BoxPredictor_' + str(scope_idx) + '/' + name,
                           stride=1, activation_fn=tf.nn.relu6, normalizer_fn=None)
+        v1 = tf.global_variables()
+        layer_vars = v1[len(v0):]
+        layer_var_mapping = {net.name: layer_vars}
+        curr_layer_var_mappings_ordered.append(layer_var_mapping)
+        curr_layer.append(net)
         if self.compute_bn_mean_var:
+            v0 = tf.global_variables()
             net = tf.layers.batch_normalization(net, training=self.compute_bn_mean_var)
+            v1 = tf.global_variables()
+            layer_vars = v1[len(v0):]
+            layer_var_mapping = {net.name: layer_vars}
+            curr_layer_var_mappings_ordered.append(layer_var_mapping)
+            curr_layer.append(net)
+        self.layer_var_mappings_ordered.append(curr_layer_var_mappings_ordered)
+        self.layers.append(curr_layer)
         return net
 
     def ssdlite_nn(self, ssd_endpoints, num_box_points=4):
@@ -263,7 +330,7 @@ class RoomNet:
                                                    detection_out.shape[-1].value], name='detections_raw')
         classification_out = tf.concat(classification_outs_all, axis=1)
         classification_out_softmax = tf.nn.softmax(classification_out, name='classifications_raw')
-        return detection_out, classification_out_softmax
+        return detection_out, classification_out_softmax, classification_out
 
     def init_nn_graph(self):
         layer_outs = self.conv_block(self.x_tensor, 8)
@@ -271,21 +338,14 @@ class RoomNet:
         layer_outs = self.conv_block(layer_outs, 64, pool_ksize=4, pool_stride=2, block_depth=2)
         layer_outs = self.conv_block(layer_outs, 128, pooling=False)
         layer_outs = self.conv_block(layer_outs, 16, pool_ksize=4, pool_stride=2, block_depth=3)
+        stop_grad_vars = tf.global_variables()
+        ssd_endpoints = [self.layers[4][1], self.layers[4][4], self.layers[4][7]]
+        v0 = tf.global_variables()
+        detection_out, classification_out_softmax, classification_out = self.ssdlite_nn(ssd_endpoints)
+        v1 = tf.global_variables()
+        ssdlite_vars = v1[len(v0):]
 
-
-
-        # shp = layer_outs.shape
-        # flat_len = shp[1] * shp[2] * shp[3]
-        # v0 = tf.all_variables()
-        # layer_outs = self.dense_block(tf.reshape(layer_outs, [-1, flat_len]), 32)
-        # layer_outs = self.dense_block(layer_outs, 16)
-        # layer_outs = self.dense_block(layer_outs, 8)
-        # layer_outs = self.dense_block(layer_outs, self.num_classes, batch_norm=False, biased=True)
-        # v1 = tf.all_variables()
-        
         trainable_vars = tf.trainable_variables()
-        original_vars = []
-
-        # restore_excluded_vars = [v for v in v1 if v not in v0]
-        restore_excluded_vars = []
-        return layer_outs, trainable_vars, original_vars, restore_excluded_vars
+        restore_excluded_vars = ssdlite_vars
+        layer_outs = [detection_out, classification_out_softmax, classification_out]
+        return layer_outs, trainable_vars, stop_grad_vars, restore_excluded_vars
