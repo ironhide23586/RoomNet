@@ -99,6 +99,152 @@ class RoomNet:
         reduced_loss = tf.reduce_mean(loss_op) + tf.add_n(l2_losses)
         return reduced_loss
 
+    def compute_iou_centered_yxhw_vectorized_tf(self, bb0, bb1):
+        y0_center, x0_center, h0, w0 = tuple([bb0[:, i] for i in range(bb0.shape[1])])
+        y1_center, x1_center, h1, w1 = tuple([bb1[:, i] for i in range(bb1.shape[1])])
+        boxA = [x0_center - (w0 / 2),
+                y0_center - (h0 / 2),
+                x0_center + (w0 / 2),
+                y0_center + (h0 / 2)]
+        boxB = [x1_center - (w1 / 2),
+                y1_center - (h1 / 2),
+                x1_center + (w1 / 2),
+                y1_center + (h1 / 2)]
+        # determine the (x, y)-coordinates of the intersection rectangle
+        xA = tf.reduce_max(tf.concat([tf.expand_dims(boxA[0], 0), tf.expand_dims(boxB[0], 0)], axis=0), axis=0)
+        yA = tf.reduce_max(tf.concat([tf.expand_dims(boxA[1], 0), tf.expand_dims(boxB[1], 0)], axis=0), axis=0)
+        xB = tf.reduce_min(tf.concat([tf.expand_dims(boxA[2], 0), tf.expand_dims(boxB[2], 0)], axis=0), axis=0)
+        yB = tf.reduce_min(tf.concat([tf.expand_dims(boxA[3], 0), tf.expand_dims(boxB[3], 0)], axis=0), axis=0)
+
+        # compute the area of intersection rectangle
+        interArea = tf.nn.relu(xB - xA) * tf.nn.relu(yB - yA)
+
+        # compute the area of both the prediction and ground-truth
+        # rectangles
+        boxAArea = (boxA[2] - boxA[0]) * (boxA[3] - boxA[1])
+        boxBArea = (boxB[2] - boxB[0]) * (boxB[3] - boxB[1])
+
+        # compute the intersection over union by taking the intersection
+        # area and dividing it by the sum of prediction + ground-truth
+        # areas - the interesection area
+        iou = interArea / (boxAArea + boxBArea - interArea)
+
+        # return the intersection over union value
+        return tf.maximum(0., tf.cast(iou, tf.float32))
+
+    def class_loss_tf(self, pos_mask, class_gt, local_class_pred, num_pos, logits=False):
+        pos_class_preds = tf.boolean_mask(local_class_pred, pos_mask)
+        if logits:  # TODO - throws error; needs fix
+            gt_expanded = tf.zeros_like(pos_class_preds)
+            gt_expanded = tf.scatter_update(gt_expanded, tf.get_variable(tf.tile([class_gt + 1], [num_pos])),
+                                            tf.get_variable(tf.tile([1.], [num_pos])))
+            pos_class_loss = tf.nn.softmax_cross_entropy_with_logits(logits=pos_class_preds,
+                                                                     labels=gt_expanded)
+        else:
+            pos_class_loss = tf.reduce_sum(tf.log(pos_class_preds[:, class_gt + 1]))
+
+        # Hard negative mining
+        neg_mask = ~pos_mask
+        neg_class_preds = tf.boolean_mask(local_class_pred, neg_mask)
+        neg_class_probs = neg_class_preds[:, 0]
+        num_negs = 3 * num_pos
+        neg_class_probs_topk, neg_class_probs_topk_idx = tf.nn.top_k(neg_class_probs, num_negs)
+        if logits:  # TODO - throws error; needs fix
+            gt_expanded = tf.zeros_like(neg_class_preds)
+            gt_expanded = tf.scatter_update(gt_expanded, tf.tile([0.], [num_negs]),
+                                            tf.tile([1.], [num_negs]))
+            neg_class_preds = tf.gather(neg_class_preds, neg_class_probs_topk_idx)
+            neg_class_loss = tf.nn.softmax_cross_entropy_with_logits(logits=neg_class_preds,
+                                                                     labels=gt_expanded)
+        else:
+            neg_class_loss = tf.reduce_sum(tf.log(neg_class_probs_topk))
+
+        curr_class_loss = -pos_class_loss - neg_class_loss
+        return curr_class_loss
+
+    def loc_loss_tf(self, pos_priors, pos_mask, loc_gt_repeated, local_loc_pred, num_pos):
+        cy_cx_priors = pos_priors[:, :2]
+        h_w_priors = pos_priors[:, 2:]
+        cy_cx_gt = loc_gt_repeated[:, :2]
+        h_w_gt = loc_gt_repeated[:, 2:]
+
+        g_cy_cx = ((cy_cx_gt - cy_cx_priors) / h_w_priors) * 10.
+        g_h_w = tf.log(h_w_gt / h_w_priors) * 5.
+
+        pos_loc_truths = tf.concat([g_cy_cx, g_h_w], axis=1)
+        pos_loc_preds = tf.boolean_mask(local_loc_pred, pos_mask)
+
+        curr_loc_loss = tf.losses.huber_loss(pos_loc_truths, pos_loc_preds, reduction=tf.losses.Reduction.NONE)
+        curr_loc_loss = tf.reduce_sum(curr_loc_loss)
+        return curr_loc_loss
+
+    def pos_match_loss_compute_tf(self, pos_priors, pos_mask, loc_gt, class_gt,
+                                  local_loc_pred, local_class_pred, num_pos, alpha=1., logits=False):
+        curr_loc_loss = self.loc_loss_tf(pos_priors, pos_mask, loc_gt, local_loc_pred, num_pos)
+        curr_class_loss = self.class_loss_tf(pos_mask, class_gt, local_class_pred, num_pos, logits=logits)
+        curr_loss = tf.cast((1 / num_pos), tf.float32) * (curr_class_loss + alpha * curr_loc_loss)
+        return curr_loss
+
+    def single_gt_loss_tf(self, local_gt, local_loc_pred, local_class_pred, box_priors, iou_thresh=.5, alpha=1.,
+                          logits=False, num_box_points=4):
+        local_loc_gt = local_gt[:, :num_box_points]
+        local_class_gt = local_gt[:, -1]
+        loc_gt_repeated = local_loc_gt
+        class_gt = tf.cast(local_class_gt[0], tf.int32)
+
+        loc_gt_prior_ious = self.compute_iou_centered_yxhw_vectorized_tf(loc_gt_repeated, box_priors)
+        pos_mask = loc_gt_prior_ious > iou_thresh
+
+        pos_priors = tf.boolean_mask(box_priors, pos_mask)
+        num_pos = tf.shape(pos_priors)[0]
+
+        loss_compute_fn = lambda: self.pos_match_loss_compute_tf(pos_priors, pos_mask, loc_gt_repeated[:num_pos],
+                                                                 class_gt, local_loc_pred, local_class_pred, num_pos,
+                                                                 alpha=alpha, logits=logits)
+        curr_loss = tf.cond(num_pos > 0, loss_compute_fn, lambda: 0.)
+        return curr_loss
+
+    def loss_op_tf_worker(self, loc_preds, class_preds, num_gts, in_batch_idx, num_gt, gts, preds_per_img, box_priors,
+                          iou_thresh=.5, alpha=1., logits=False):
+        start_idx = tf.reduce_sum(num_gts[:in_batch_idx])
+        end_idx = start_idx + num_gt
+        local_gt = gts[start_idx: end_idx]
+        local_gt_repeated_raw = tf.tile(local_gt, [preds_per_img, 1])
+
+        extraction_idx_gen = lambda i: tf.range(i, preds_per_img * num_gt, num_gt)
+        extraction_indices = tf.map_fn(extraction_idx_gen, tf.range(0, num_gt, 1))
+        extractor_fn = lambda indices: tf.gather(local_gt_repeated_raw, indices)
+        local_gt_repeated = tf.map_fn(extractor_fn, extraction_indices, dtype=tf.float32)
+
+        local_loc_pred_raw = loc_preds[in_batch_idx]
+        local_loc_pred = tf.reshape(tf.tile(local_loc_pred_raw, [num_gt, 1]), [num_gt, preds_per_img, -1])
+
+        local_class_pred_raw = class_preds[in_batch_idx]
+        local_class_pred = tf.reshape(tf.tile(local_class_pred_raw, [num_gt, 1]), [num_gt, preds_per_img, -1])
+
+        curr_img_loss_fn = lambda idx: self.single_gt_loss_tf(local_gt_repeated[idx], local_loc_pred[idx],
+                                                              local_class_pred[idx], box_priors,
+                                                              iou_thresh=iou_thresh, alpha=alpha, logits=logits)
+        curr_img_losses = tf.map_fn(curr_img_loss_fn, tf.range(0, num_gt), dtype=tf.float32)
+        curr_img_loss = tf.reduce_mean(curr_img_losses)
+        return curr_img_loss
+
+    def loss_op_tf(self, loc_preds, class_preds, gts, num_gts, box_priors_py, iou_thresh=.5, alpha=1., logits=False):
+        box_priors = tf.constant(box_priors_py, dtype=tf.float32)
+        batch_losses = []
+        preds_per_img = tf.shape(box_priors)[0]
+        for in_batch_idx in range(self.train_batch_size):
+            num_gt = num_gts[in_batch_idx]
+            curr_img_loss_fn = lambda: self.loss_op_tf_worker(loc_preds, class_preds,
+                                                              num_gts, in_batch_idx, num_gt, gts,
+                                                              preds_per_img, box_priors,
+                                                              iou_thresh=iou_thresh, alpha=alpha,
+                                                              logits=logits)
+            curr_img_loss = tf.cond(num_gt > 0, curr_img_loss_fn, lambda: 0.)
+            batch_losses.append(curr_img_loss)
+        curr_loss = tf.reduce_mean(batch_losses)
+        return curr_loss
+
     def init(self):
         if not self.sess:
             self.sess = tf.Session()
