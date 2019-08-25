@@ -1,11 +1,16 @@
-'''
-Author: Souham Biswas
-Email: souham.biswas@outlook.com
-GitHub: https://github.com/ironhide23586
-LinkedIn: https://www.linkedin.com/in/souham
+"""  _
+    |_|_
+   _  | |
+ _|_|_|_|_
+|_|_|_|_|_|_
+  |_|_|_|_|_|
+    | | |_|
+    |_|_
+      |_|
 
-I'm not responsible if your machine catches fire.
-'''
+Author: Souham Biswas
+Website: https://www.linkedin.com/in/souham/
+"""
 
 
 import os
@@ -15,6 +20,8 @@ import tensorflow as tf
 from tensorflow.contrib import slim
 import numpy as np
 import cv2
+
+from anchors import box_priors
 
 
 class RoomNet:
@@ -28,7 +35,7 @@ class RoomNet:
         self.compute_bn_mean_var = compute_bn_mean_var
         self.optimized_inference = optimized_inference
         self.train_batch_size = train_batch_size
-        self.x_tensor = tf.placeholder(tf.float32, shape=[None, im_side, im_side, 3],
+        self.x_tensor = tf.placeholder(tf.float32, shape=(self.train_batch_size, self.im_side, self.im_side, 3),
                                        name='input_x_tensor')
         self.layers = []
         self.layer_var_mappings_ordered = []
@@ -52,7 +59,8 @@ class RoomNet:
             return
         self.dropout_enabled = dropout_enabled
         self.l2_regularizer_coeff = l2_regularizer_coeff
-        self.y_tensor = tf.placeholder(tf.int32, shape=None, name='input_y_class_ids')
+        self.y_tensor = tf.placeholder(dtype=tf.float32, shape=(None, 4 + 1), name='gt_labels_agg')
+        self.num_y_bboxes_per_image = tf.placeholder(dtype=tf.int32, shape=(None))  # Number of GT bboxes in each image
         if self.dropout_enabled:
             self.dropout_rate = dropout_rate
             self.dropout_rate_tensor = tf.placeholder(tf.float32, shape=())
@@ -64,7 +72,7 @@ class RoomNet:
                 for k, v in layer_data.items():
                     self.layername_var_map[k] = v
 
-        self.loss_op = self.loss_function(self.y_tensor, self.out_op)
+        self.loss_op = self.loss_function([self.y_tensor, self.num_y_bboxes_per_image], self.out_op)
         self.opt = tf.train.AdamOptimizer(learning_rate=self.learn_rate_tf)
         grads = tf.gradients(self.loss_op, self.trainable_vars, stop_gradients=self.stop_grad_vars)
 
@@ -94,10 +102,11 @@ class RoomNet:
         self.model_fpath_prefix = self.model_folder + '/' + 'roomnet-'
 
     def loss_function(self, y_truth, y_pred):
-        loss_op = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y_truth, logits=y_pred)
-        l2_losses = [self.l2_regularizer_coeff * tf.nn.l2_loss(v) for v in self.trainable_vars]
-        reduced_loss = tf.reduce_mean(loss_op) + tf.add_n(l2_losses)
-        return reduced_loss
+        detection_out, classification_out_softmax, classification_out = y_pred
+        gt_bboxes, gt_bboxes_counts = y_truth
+        box_priors_in = np.array(box_priors)
+        loss = self.loss_op_tf(detection_out, classification_out, gt_bboxes, gt_bboxes_counts, box_priors_in)
+        return loss
 
     def compute_iou_centered_yxhw_vectorized_tf(self, bb0, bb1):
         y0_center, x0_center, h0, w0 = tuple([bb0[:, i] for i in range(bb0.shape[1])])
@@ -162,7 +171,7 @@ class RoomNet:
         curr_class_loss = -pos_class_loss - neg_class_loss
         return curr_class_loss
 
-    def loc_loss_tf(self, pos_priors, pos_mask, loc_gt_repeated, local_loc_pred, num_pos):
+    def loc_loss_tf(self, pos_priors, pos_mask, loc_gt_repeated, local_loc_pred):
         cy_cx_priors = pos_priors[:, :2]
         h_w_priors = pos_priors[:, 2:]
         cy_cx_gt = loc_gt_repeated[:, :2]
@@ -180,7 +189,7 @@ class RoomNet:
 
     def pos_match_loss_compute_tf(self, pos_priors, pos_mask, loc_gt, class_gt,
                                   local_loc_pred, local_class_pred, num_pos, alpha=1., logits=False):
-        curr_loc_loss = self.loc_loss_tf(pos_priors, pos_mask, loc_gt, local_loc_pred, num_pos)
+        curr_loc_loss = self.loc_loss_tf(pos_priors, pos_mask, loc_gt, local_loc_pred)
         curr_class_loss = self.class_loss_tf(pos_mask, class_gt, local_class_pred, num_pos, logits=logits)
         curr_loss = tf.cast((1 / num_pos), tf.float32) * (curr_class_loss + alpha * curr_loc_loss)
         return curr_loss
@@ -464,6 +473,25 @@ class RoomNet:
         self.layers.append(curr_layer)
         return net
 
+    def gen_anchors(self, fmap_sizes, fmap_anchor_ratios=None, fmap_anchor_widths=None):
+        num_fmaps = len(fmap_sizes)
+        if fmap_anchor_ratios is None:
+            zero_ratios_hw = np.array([1., 0.5, 2.])
+            expanded_fmap_ratios_hw = np.array([1.0, 0.5, 2.0, 0.33333335748263787, 3., 1.0])
+        if fmap_anchor_widths is None:
+            zero_anchor_widths = np.array([0.1, 0.14142136, 0.28284273])
+            expanded_anchor_widths = np.array([0.1, 0.14142136, 0.28284273, .33, .4, .5])
+        for i in range(num_fmaps):
+            grid_elem_size = 1. / fmap_sizes[i]
+            range_start = (1 / fmap_sizes[i]) / 2
+            range_end = 1. - range_start
+            idx_range = np.linspace(range_start, range_end, fmap_sizes[i])
+            for cy in idx_range:
+                for cx in idx_range:
+                    if i > 0:
+                        anchor_heights expanded_anchor_widths[i] * expanded_fmap_ratios_hw
+
+
     def ssdlite_nn(self, ssd_endpoints, num_box_points=4):
         detection_outs_all = [self.ssd_block_box_predictor(ssd_endpoints[0], num_box_points * 3, 0)] \
                              + [self.ssd_block_box_predictor(ssd_endpoints[i + 1], num_box_points * 6, i + 1)
@@ -486,6 +514,8 @@ class RoomNet:
         layer_outs = self.conv_block(layer_outs, 16, pool_ksize=4, pool_stride=2, block_depth=3)
         stop_grad_vars = tf.global_variables()
         ssd_endpoints = [self.layers[4][1], self.layers[4][4], self.layers[4][7]]
+        ssd_enpoint_sides = [int(ep.shape[1]) for ep in ssd_endpoints]
+        anchor_bboxes = self.gen_anchors(ssd_enpoint_sides)
         v0 = tf.global_variables()
         detection_out, classification_out_softmax, classification_out = self.ssdlite_nn(ssd_endpoints)
         v1 = tf.global_variables()

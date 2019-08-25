@@ -1,11 +1,16 @@
-'''
-Author: Souham Biswas
-Email: souham.biswas@outlook.com
-GitHub: https://github.com/ironhide23586
-LinkedIn: https://www.linkedin.com/in/souham
+"""  _
+    |_|_
+   _  | |
+ _|_|_|_|_
+|_|_|_|_|_|_
+  |_|_|_|_|_|
+    | | |_|
+    |_|_
+      |_|
 
-I'm not responsible if your machine catches fire.
-'''
+Author: Souham Biswas
+Website: https://www.linkedin.com/in/souham/
+"""
 
 
 from glob import glob

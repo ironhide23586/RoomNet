@@ -1,3 +1,18 @@
+"""  _
+    |_|_
+   _  | |
+ _|_|_|_|_
+|_|_|_|_|_|_
+  |_|_|_|_|_|
+    | | |_|
+    |_|_
+      |_|
+
+Author: Souham Biswas
+Website: https://www.linkedin.com/in/souham/
+"""
+
+
 import os
 from glob import glob
 import shutil
