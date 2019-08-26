@@ -21,8 +21,6 @@ from tensorflow.contrib import slim
 import numpy as np
 import cv2
 
-from anchors import box_priors
-
 
 class RoomNet:
 
@@ -35,6 +33,7 @@ class RoomNet:
         self.compute_bn_mean_var = compute_bn_mean_var
         self.optimized_inference = optimized_inference
         self.train_batch_size = train_batch_size
+        self.ssd_endpoints = []
         self.x_tensor = tf.placeholder(tf.float32, shape=(self.train_batch_size, self.im_side, self.im_side, 3),
                                        name='input_x_tensor')
         self.layers = []
@@ -104,8 +103,9 @@ class RoomNet:
     def loss_function(self, y_truth, y_pred):
         detection_out, classification_out_softmax, classification_out = y_pred
         gt_bboxes, gt_bboxes_counts = y_truth
-        box_priors_in = np.array(box_priors)
-        loss = self.loss_op_tf(detection_out, classification_out, gt_bboxes, gt_bboxes_counts, box_priors_in)
+        ssd_endpoint_sides = [int(ep.shape[1]) for ep in self.ssd_endpoints]
+        anchor_bboxes = self.gen_anchors(ssd_endpoint_sides)
+        loss = self.loss_op_tf(detection_out, classification_out, gt_bboxes, gt_bboxes_counts, anchor_bboxes)
         return loss
 
     def compute_iou_centered_yxhw_vectorized_tf(self, bb0, bb1):
@@ -473,24 +473,39 @@ class RoomNet:
         self.layers.append(curr_layer)
         return net
 
-    def gen_anchors(self, fmap_sizes, fmap_anchor_ratios=None, fmap_anchor_widths=None):
+    def gen_anchors(self, fmap_sizes, anchor_bbox_base_dims=None):
         num_fmaps = len(fmap_sizes)
-        if fmap_anchor_ratios is None:
-            zero_ratios_hw = np.array([1., 0.5, 2.])
-            expanded_fmap_ratios_hw = np.array([1.0, 0.5, 2.0, 0.33333335748263787, 3., 1.0])
-        if fmap_anchor_widths is None:
-            zero_anchor_widths = np.array([0.1, 0.14142136, 0.28284273])
-            expanded_anchor_widths = np.array([0.1, 0.14142136, 0.28284273, .33, .4, .5])
+        if anchor_bbox_base_dims is None:
+            zero_idx_dims = np.array([[.1, .1],
+                                      [0.14142136, 0.28284273],
+                                      [0.28284273, 0.14142136]])
+            first_idx_dims = np.array([[0.25      , 0.25      ],
+                                       [0.17677669, 0.35355338],
+                                       [0.35355338, 0.17677669],
+                                       [0.14433756, 0.43301269],
+                                       [0.43303436, 0.14433035],
+                                       [0.28504387, 0.28504387]])
+            last_idx_dims = (first_idx_dims.T * ([3.2]*5 + [3.06])).T
+            nz_idx_dims = [first_idx_dims, last_idx_dims]
+        out_anchor_bboxes = None
         for i in range(num_fmaps):
             grid_elem_size = 1. / fmap_sizes[i]
-            range_start = (1 / fmap_sizes[i]) / 2
+            range_start = grid_elem_size / 2
             range_end = 1. - range_start
             idx_range = np.linspace(range_start, range_end, fmap_sizes[i])
             for cy in idx_range:
                 for cx in idx_range:
                     if i > 0:
-                        anchor_heights expanded_anchor_widths[i] * expanded_fmap_ratios_hw
-
+                        my_anchors_hw = nz_idx_dims[i - 1]
+                    else:
+                        my_anchors_hw = zero_idx_dims
+                    cy_cx_tiled = np.tile([cy, cx], [my_anchors_hw.shape[0], 1])
+                    curr_gridbox_anchors = np.hstack([cy_cx_tiled, my_anchors_hw])
+                    if out_anchor_bboxes is None:
+                        out_anchor_bboxes = curr_gridbox_anchors
+                    else:
+                        out_anchor_bboxes = np.vstack([out_anchor_bboxes, curr_gridbox_anchors])
+        return out_anchor_bboxes
 
     def ssdlite_nn(self, ssd_endpoints, num_box_points=4):
         detection_outs_all = [self.ssd_block_box_predictor(ssd_endpoints[0], num_box_points * 3, 0)] \
@@ -513,11 +528,10 @@ class RoomNet:
         layer_outs = self.conv_block(layer_outs, 128, pooling=False)
         layer_outs = self.conv_block(layer_outs, 16, pool_ksize=4, pool_stride=2, block_depth=3)
         stop_grad_vars = tf.global_variables()
-        ssd_endpoints = [self.layers[4][1], self.layers[4][4], self.layers[4][7]]
-        ssd_enpoint_sides = [int(ep.shape[1]) for ep in ssd_endpoints]
-        anchor_bboxes = self.gen_anchors(ssd_enpoint_sides)
+        self.ssd_endpoints = [self.layers[4][1], self.layers[4][4], self.layers[4][7]]
+
         v0 = tf.global_variables()
-        detection_out, classification_out_softmax, classification_out = self.ssdlite_nn(ssd_endpoints)
+        detection_out, classification_out_softmax, classification_out = self.ssdlite_nn(self.ssd_endpoints)
         v1 = tf.global_variables()
         ssdlite_vars = v1[len(v0):]
 
