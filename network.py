@@ -59,7 +59,7 @@ class RoomNet:
         self.dropout_enabled = dropout_enabled
         self.l2_regularizer_coeff = l2_regularizer_coeff
         self.y_tensor = tf.placeholder(dtype=tf.float32, shape=(None, 4 + 1), name='gt_labels_agg')
-        self.num_y_bboxes_per_image = tf.placeholder(dtype=tf.int32, shape=(None))  # Number of GT bboxes in each image
+        self.num_y_bboxes_per_image_tensor = tf.placeholder(dtype=tf.int32, shape=(None))  # Number of GT bboxes in each image
         if self.dropout_enabled:
             self.dropout_rate = dropout_rate
             self.dropout_rate_tensor = tf.placeholder(tf.float32, shape=())
@@ -82,9 +82,6 @@ class RoomNet:
         else:
             self.train_op = self.opt.apply_gradients(zip(grads, self.trainable_vars), global_step=self.step_ph)
 
-        self.outs_softmax_op = tf.nn.softmax(self.out_op)
-        self.outs_final = tf.argmax(self.outs_softmax_op, axis=-1)
-
         if not load_training_vars:
             self.restore_excluded_vars += [v for v in tf.all_variables() if 'Adam' in v.name or 'power' in v.name]
         else:
@@ -105,7 +102,10 @@ class RoomNet:
         gt_bboxes, gt_bboxes_counts = y_truth
         ssd_endpoint_sides = [int(ep.shape[1]) for ep in self.ssd_endpoints]
         anchor_bboxes = self.gen_anchors(ssd_endpoint_sides)
-        loss = self.loss_op_tf(detection_out, classification_out, gt_bboxes, gt_bboxes_counts, anchor_bboxes)
+        loss_nr = self.loss_op_tf(detection_out, classification_out, gt_bboxes, gt_bboxes_counts, anchor_bboxes)
+        train_vars = [v for v in tf.trainable_variables() if v not in self.stop_grad_vars]
+        loss_l2 = tf.add_n([tf.nn.l2_loss(v) for v in train_vars if 'bias' not in v.name]) * self.l2_regularizer_coeff
+        loss = loss_nr + loss_l2
         return loss
 
     def compute_iou_centered_yxhw_vectorized_tf(self, bb0, bb1):
@@ -327,15 +327,18 @@ class RoomNet:
 
     def train_step(self, x_in, y):
         x = ((x_in[:, :, :, [2, 1, 0]] / 255.) * 2) - 1
+        y_gts, y_num_gts = y
         if self.dropout_enabled:
             loss, _, step_tf, lr = self.sess.run([self.loss_op, self.train_op, self.step_ph, self.learn_rate_tf],
                                                  feed_dict={self.x_tensor: x,
-                                                            self.y_tensor: y,
+                                                            self.y_tensor: y_gts,
+                                                            self.num_y_bboxes_per_image_tensor: y_num_gts,
                                                             self.dropout_rate_tensor: self.dropout_rate})
         else:
             loss, _, step_tf, lr = self.sess.run([self.loss_op, self.train_op, self.step_ph, self.learn_rate_tf],
                                                  feed_dict={self.x_tensor: x,
-                                                            self.y_tensor: y})
+                                                            self.y_tensor: y_gts,
+                                                            self.num_y_bboxes_per_image_tensor: y_num_gts})
         self.step = step_tf
         return loss, step_tf, lr
 
@@ -469,6 +472,9 @@ class RoomNet:
             layer_var_mapping = {net.name: layer_vars}
             curr_layer_var_mappings_ordered.append(layer_var_mapping)
             curr_layer.append(net)
+        if self.dropout_enabled:
+            output = tf.nn.dropout(net, rate=self.dropout_rate_tensor)
+            curr_layer.append(output)
         self.layer_var_mappings_ordered.append(curr_layer_var_mappings_ordered)
         self.layers.append(curr_layer)
         return net
