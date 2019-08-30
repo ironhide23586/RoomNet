@@ -17,24 +17,20 @@ import os
 from glob import glob
 import json
 from multiprocessing import Pool, cpu_count
+import time
 
 import numpy as np
 from tqdm import tqdm
 import cv2
 
-from generator import TrainFeeder
+from generator import DataFeeder
 from network import RoomNet
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+from preprocess_google_open_dataset import GoogleOpenBboxPreprocessor
 
+DATA_DIR = './data/Google-Open-Images'
 
-# DATA_DIR = './data/REI-Dataset-reduced'
-DATA_DIR = './data/REI-Dataset'
-
-TRAIN_LIST_FPATH = 'train_list.txt'
-VAL_LIST_FPATH = 'val_list.txt'
-TRAIN_STATS_FILE = 'all_train_stats.json'
 IMG_SIDE = 224
-
 TRAIN_BATCH_SIZE = 45
 TRAIN_STEPS = 100000
 SAVE_FREQ = 10
@@ -46,83 +42,20 @@ UPDATE_BATCHNORM_MOVING_VARS = True
 COMPUTE_BN_MEAN_VAR = True
 
 
-def remove_invalid_fpaths(fpaths):
-    legit_fpaths = []
-    print('Filtering label', fpaths[0].split(os.sep)[-2])
-    for i in range(len(fpaths)):
-        im = cv2.imread(fpaths[i])
-        if im is not None:
-            legit_fpaths.append(fpaths[i])
-    return legit_fpaths
-
-
-def extract_fpaths(data_dir):
-    if os.path.isfile(TRAIN_LIST_FPATH) and os.path.isfile(VAL_LIST_FPATH):
-        print('Training and validation fpath lists found!, reading from them')
-        with open(TRAIN_LIST_FPATH, 'r') as f:
-            all_train_txt = f.readlines()
-        with open(VAL_LIST_FPATH, 'r') as f:
-            all_val_txt = f.readlines()
-        return all_train_txt, all_val_txt
-    print('Training and validation fpath lists not found!, generating them')
-    class_dirs = glob(data_dir + '/*')
-    path_mappings = {}
-    class_sizes = []
-    labels = []
-    name_id_mappings = {}
-    p = Pool(cpu_count())
-    args = []
-    for i in range(len(class_dirs)):
-        args.append(glob(class_dirs[i] + '/*'))
-    class_fpaths_dirwise = p.map(remove_invalid_fpaths, args)
-    p.close()
-    for i in range(len(class_dirs)):
-        class_dir = class_dirs[i]
-        # class_fpaths = remove_invalid_fpaths(glob(class_dir + '/*'))
-        class_fpaths = class_fpaths_dirwise[i]
-        key = class_dir.split(os.sep)[-1]
-        path_mappings[key] = class_fpaths
-        class_sizes.append(len(class_fpaths))
-        labels.append(key)
-        name_id_mappings[key] = i
-    json.dump(name_id_mappings, open('label_mappings.json', 'w'), indent=4, sort_keys=True)
-    smallest_class_id = np.argmin(class_sizes)
-    smallest_class_size = class_sizes[smallest_class_id]
-    train_path_mappings = {}
-    val_path_mappings = {}
-    train_class_size = int(.9 * smallest_class_size)
-    for i in range(len(class_dirs)):
-        paths = path_mappings[labels[i]].copy()
-        np.random.shuffle(paths)
-        train_paths = paths[:train_class_size]
-        val_paths = paths[train_class_size:]
-        train_path_mappings[labels[i]] = train_paths
-        val_path_mappings[labels[i]] = val_paths
-    all_train_txt = []
-    all_val_txt = []
-    for i in range(len(class_dirs)):
-        train_txt = [train_path_mappings[labels[i]][j] + ' ' + str(i) + '\n'
-                     for j in range(len(train_path_mappings[labels[i]]))]
-        val_txt = [val_path_mappings[labels[i]][j] + ' ' + str(i) + '\n'
-                   for j in range(len(val_path_mappings[labels[i]]))]
-        all_train_txt += train_txt
-        all_val_txt += val_txt
-    np.random.shuffle(all_train_txt)
-    np.random.shuffle(all_val_txt)
-    with open(TRAIN_LIST_FPATH, 'w') as f:
-        f.writelines(all_train_txt)
-    with open(VAL_LIST_FPATH, 'w') as f:
-        f.writelines(all_val_txt)
-
-    return all_train_txt, all_val_txt
+def wait():
+    while True:
+        time.sleep(300)
 
 
 if __name__ == '__main__':
-    train_fpaths, val_fpaths = extract_fpaths(DATA_DIR)
-    train_data_reader = TrainFeeder(train_fpaths, batch_size=TRAIN_BATCH_SIZE, batches_per_queue=40, shuffle=True,
-                                    im_side=IMG_SIDE, random_crop=True, preprocess=True)
-    val_data_reader = TrainFeeder(val_fpaths, batch_size=64, batches_per_queue=10, shuffle=False,
-                                  im_side=IMG_SIDE, random_crop=False, preprocess=False)
+    google_open_bbox_preprocessor = GoogleOpenBboxPreprocessor(DATA_DIR, ['Bathtub', 'Shower'],
+                                                               images_dirname='Bathtub_Shower', init=True,
+                                                               shuffle=True, train_frac=.8)
+    train_data_reader = DataFeeder(google_open_bbox_preprocessor, batch_size=TRAIN_BATCH_SIZE, batches_per_queue=40,
+                                   shuffle=True, im_side=IMG_SIDE, random_crop=True, preprocess=True, split='train')
+    wait()
+    val_data_reader = DataFeeder(google_open_bbox_preprocessor, batch_size=64, batches_per_queue=10,
+                                 shuffle=False, im_side=IMG_SIDE, random_crop=False, preprocess=False, split='val')
 
     nn = RoomNet(num_classes=6, im_side=IMG_SIDE, num_steps=TRAIN_STEPS, learn_rate=LEARN_RATE,
                  dropout_rate=DROPOUT_RATE, l2_regularizer_coeff=L2_REGULARIZATION_COEFF,

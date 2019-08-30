@@ -17,19 +17,23 @@ import logging
 from threading import Thread
 from queue import Queue
 import time
+import json
 
 import numpy as np
 import cv2
 
 
-class TrainFeeder:
+class DataFeeder:
 
-    def __init__(self, train_fpaths, shuffle=True, batch_size=8, preprocess=True,
+    def __init__(self, data_preprocesor, split, batch_size=8, preprocess=True, shuffle=True,
                  batches_per_queue=40, random_crop=True, im_side=300):
-        self.train_fpaths = np.array(train_fpaths)
-        logging.info('Initializing TrainFeeder Object on ' + str(self.train_fpaths.shape[0]) + ' data objects')
-        if shuffle:
-            np.random.shuffle(self.train_fpaths)
+        self.data_preprocessor = data_preprocesor
+        if split == 'train':
+            self.input_fpaths = self.data_preprocessor.train_list
+        else:
+            self.input_fpaths = self.data_preprocessor.val_list
+        self.input_fpaths = np.array(self.input_fpaths)
+        logging.info('Initializing DataFeeder Object on ' + str(self.input_fpaths.shape[0]) + ' data objects')
         self.random_crop = random_crop
         self.im_side = im_side
         self.shuffle = shuffle
@@ -37,7 +41,7 @@ class TrainFeeder:
         self.epochs = 0
         self.batch_iters = 0
         self.data_preprocess = preprocess
-        self.epoch_size_total = self.train_fpaths.shape[0]
+        self.epoch_size_total = self.input_fpaths.shape[0]
         if self.batch_size > self.epoch_size_total:
             logging.warning('Batch size exceeds epoch size, setting batch size to epoch size')
             self.batch_size = self.epoch_size_total
@@ -97,24 +101,30 @@ class TrainFeeder:
                 x_pp = np.flipud(x_pp)
         return x_pp, y
 
+    def read_x(self, fpath):
+        return cv2.imread(fpath)
+
+    def read_y(self, fpath):
+        return json.load(open(fpath, 'r'))
+
     def fpath2data(self, batch_fpaths):
         batch_data_x = []
         batch_data_y = []
         batch_data_x_fpaths = []
         batch_data_y_fpaths = []
         for fpath_set in batch_fpaths:
-            fpath_components = fpath_set.strip().split(' ')
-            x_path = ' '.join(fpath_components[:-1])
-            x_im = cv2.imread(x_path)
-            y_im = int(fpath_components[-1])
+            x_path, y_path = fpath_set.strip().split(' ')
+            x_data = self.read_x(x_path)
+            y_data = self.read_y(y_path)
             batch_data_x_fpaths.append(x_path)
-            x_im, y_im = self.preprocess_set(x_im, y_im)
-            batch_data_x.append(x_im)
-            batch_data_y.append(y_im)
+            batch_data_y_fpaths.append(y_path)
+            x_data, y_data = self.preprocess_set(x_data, y_data)
+            batch_data_x.append(x_data)
+            batch_data_y.append(y_data)
         batch_data_x = np.array(batch_data_x)
         batch_data_y = np.array(batch_data_y)
         batch_data_x_fpaths = np.array(batch_data_x_fpaths)
-        return batch_data_x, batch_data_y, batch_data_x_fpaths
+        return batch_data_x, batch_data_y, batch_data_x_fpaths, batch_data_y_fpaths
 
     def get_data(self, batch_size=None):
         if batch_size is not None:
@@ -135,18 +145,18 @@ class TrainFeeder:
             self.epochs += 1
             if self.shuffle:
                 logging.info('Shuffle enabled, so shuffling input at epoch-level')
-                np.random.shuffle(self.train_fpaths)
+                np.random.shuffle(self.input_fpaths)
         train_state = {'epoch': self.epochs + 1, 'batch': self.batch_iters, 'total_iters': self.total_iters,
                        'previous_epoch_done': self.epoch_completed}
         start_idx = (self.batch_iters - 1) * self.batch_size
         end_idx = start_idx + self.batch_size
-        self.batch_fpaths = self.train_fpaths[start_idx:end_idx]
-        # batch_data_x, batch_data_y, batch_data_x_fpaths = self.fpath2data(self.batch_fpaths)
+        self.batch_fpaths = self.input_fpaths[start_idx:end_idx]
+        # batch_data_x, batch_data_y, batch_data_x_fpaths, batch_data_y_fpaths = self.fpath2data(self.batch_fpaths)
         try:
-            batch_data_x, batch_data_y, batch_data_x_fpaths = self.fpath2data(self.batch_fpaths)
+            batch_data_x, batch_data_y, batch_data_x_fpaths, batch_data_y_fpaths = self.fpath2data(self.batch_fpaths)
         except:
             print(self.batch_fpaths)
-        return batch_data_x, batch_data_y, batch_data_x_fpaths, train_state
+        return batch_data_x, batch_data_y, batch_data_x_fpaths, batch_data_y_fpaths, train_state
 
     def __queue_filler_process(self):
         while True:
@@ -169,7 +179,8 @@ class TrainFeeder:
 
     def dequeue(self):
         if not self.buffer.empty():
-            self.batch_data_x, self.batch_data_y, self.batch_data_x_fpaths, self.train_state = self.buffer.get()
+            self.batch_data_x, self.batch_data_y, self.batch_data_x_fpaths, self.batch_data_y_fpaths, \
+            self.train_state = self.buffer.get()
             if self.train_state['previous_epoch_done']:
                 logging.info('----------------EPOCH ' + str(self.train_state['epoch'] - 1)
                              + ' COMPLETE----------------')
