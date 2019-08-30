@@ -40,10 +40,21 @@ class GoogleOpenBboxPreprocessor:
             images_dirname = 'train_f'
         else:
             self.input_img_dir = os.sep.join([self.data_dir, 'images', images_dirname])
-        self.output_label_dir = self.data_dir + os.sep + 'labels-bbox' + '-' + images_dirname
-        self.output_label_viz_dir = self.output_label_dir + '-viz' + '-' + images_dirname
+        self.input_label_dir = self.data_dir + os.sep + 'labels-bbox' + '-' + images_dirname
+        self.input_label_viz_dir = self.input_label_dir + '-viz'
+        self.train_list_fpath = self.data_dir + os.sep + 'train_list-' + images_dirname + '.txt'
+        self.val_list_fpath = self.data_dir + os.sep + 'val_list.txt-' + images_dirname + '.txt'
+        self.label_mappings_json_fpath = self.data_dir + os.sep + 'label_mappings-' + images_dirname + '.json'
+        self.label_mappings = None
+        self.train_
+        if os.path.isfile(self.label_mappings_json_fpath):
+            self.label_mappings = json.load(open(self.label_mappings_json_fpath, 'r'))
+        if os.path.isfile(self.train_list_fpath):
+
+
         self.label_file_path = self.data_dir + os.sep + 'train-annotations-bbox.csv'
         self.label_desc_path = self.data_dir + os.sep + 'class-descriptions-boxable.csv'
+
         self.input_img_paths = glob(self.input_img_dir + os.sep + '*')
         self.input_img_ids = [p.split(os.sep)[-1].split('.')[0] for p in self.input_img_paths]
         self.parsed_json = {}
@@ -64,8 +75,8 @@ class GoogleOpenBboxPreprocessor:
             self.readable2labelid_map[label_readable] = label_id
             self.labelid2readable_map[label_id] = label_readable
 
-    def process_id(self, img_id):
-        label_fpath = self.output_label_dir + os.sep + img_id + '.json'
+    def extract_labels_for_id(self, img_id):
+        label_fpath = self.input_label_dir + os.sep + img_id + '.json'
         if img_id not in self.input_img_ids or os.path.isfile(label_fpath):
             return
         img_df = self.label_dataframe[self.label_dataframe.ImageID == img_id]
@@ -80,10 +91,10 @@ class GoogleOpenBboxPreprocessor:
     def viz_id(self, img_id_idx):
         img_id = self.input_img_ids[img_id_idx]
         img_fpath = self.input_img_paths[img_id_idx]
-        viz_fpath = self.output_label_viz_dir + os.sep + img_id + '.jpg'
+        viz_fpath = self.input_label_viz_dir + os.sep + img_id + '.jpg'
         if os.path.isfile(viz_fpath):
             return
-        label_fpath = self.output_label_dir + os.sep + img_id + '.json'
+        label_fpath = self.input_label_dir + os.sep + img_id + '.json'
         label_data = json.load(open(label_fpath, 'r'))
         im = cv2.imread(img_fpath)
         h, w, _ = im.shape
@@ -97,27 +108,23 @@ class GoogleOpenBboxPreprocessor:
         cv2.imwrite(viz_fpath, im)
 
     def parse_label_data(self, parallel=True):
-        force_makedir(self.output_label_dir)
-        if len(self.input_img_ids) == len(glob(self.output_label_dir + os.sep + '*')):
+        force_makedir(self.input_label_dir)
+        if len(self.input_img_ids) == len(glob(self.input_label_dir + os.sep + '*')):
             print('Label data already parsed..')
             return
         self.label_dataframe = pd.read_csv(self.label_file_path)
-        # img_ids = list(self.label_dataframe['ImageID'])
-        # idx = np.arange(len(img_ids))
-        # filt_idx = np.array([i for i in idx if img_ids[i][0] == 'f'])
-        # self.label_dataframe = self.label_dataframe.iloc[filt_idx]
-        img_ids = list(set(list(self.label_dataframe['ImageID'])))
+        img_ids = self.input_img_ids
         if not parallel:
             for i in tqdm(range(len(img_ids))):
-                self.process_id(img_ids[i])
+                self.extract_labels_for_id(img_ids[i])
         else:
             p = Pool(cpu_count())
-            p.map(self.process_id, img_ids)
+            p.map(self.extract_labels_for_id, img_ids)
             p.close()
 
     def viz_labels(self, parallel=True, input_img_ids=None):
-        force_makedir(self.output_label_viz_dir)
-        if len(self.input_img_ids) == len(glob(self.output_label_viz_dir + os.sep + '*')):
+        force_makedir(self.input_label_viz_dir)
+        if len(self.input_img_ids) == len(glob(self.input_label_viz_dir + os.sep + '*')):
             print('Label visualizations already present..')
             return
         if not parallel:
@@ -131,13 +138,12 @@ class GoogleOpenBboxPreprocessor:
     def label_filter(self, img_id_idx, label_ids, bin_dir_name, copy=True):
         img_id = self.input_img_ids[img_id_idx]
         img_fpath = self.input_img_paths[img_id_idx]
-        label_fpath = self.output_label_dir + os.sep + img_id + '.json'
+        label_fpath = self.input_label_dir + os.sep + img_id + '.json'
         label_data = json.load(open(label_fpath, 'r'))
         label_ids_gt = [lbl['LabelName'] for lbl in label_data]
         is_present = False
         for id in label_ids:
             is_present = is_present or id in label_ids_gt
-        # self.label_filter_mask[img_id_idx] = is_present
         if copy and is_present:
             shutil.copy(img_fpath, bin_dir_name)
 
@@ -155,20 +161,48 @@ class GoogleOpenBboxPreprocessor:
             p = Pool(cpu_count())
             p.starmap(self.label_filter, args)
             p.close()
-        k = 0
+
+    def __gen_list_lines(self, x_fpaths):
+        lines = [x_fpath + ' ' + self.input_label_dir + os.sep
+                 + '.'.join(x_fpath.split(os.sep)[-1].split('.')[:-1]) + '.json\n' for x_fpath in x_fpaths]
+        return lines
+
+    def gen_train_val_lists(self, target_labels, train_frac=.8, shuffle=True):
+        if os.path.isfile(self.train_list_fpath) and os.path.isfile(self.val_list_fpath):
+            print('Training and validation fpath lists found!, reading from them')
+            with open(self.train_list_fpath, 'r') as f:
+                all_train_txt = f.readlines()
+            with open(self.val_list_fpath, 'r') as f:
+                all_val_txt = f.readlines()
+        else:
+            if shuffle:
+                idx = np.arange(len(self.input_img_ids))
+                np.random.shuffle(idx)
+                self.input_img_ids = list(np.array(self.input_img_ids)[idx])
+                self.input_img_paths = list(np.array(self.input_img_paths)[idx])
+            num_train_images = int(train_frac * len(self.input_img_ids))
+            train_x_fpaths = self.input_img_paths[:num_train_images]
+            val_x_fpaths = self.input_img_paths[num_train_images:]
+            train_lines = self.__gen_list_lines(train_x_fpaths)
+            val_lines = self.__gen_list_lines(val_x_fpaths)
+            with open(self.train_list_fpath, 'w') as f:
+                f.writelines(train_lines)
+            with open(self.val_list_fpath, 'w') as f:
+                f.writelines(val_lines)
+
 
 
 if __name__ == '__main__':
-    bb_pp = GoogleOpenBboxPreprocessor(DATA_DIR, images_dirname='train_Bathtub_Shower')
+    bb_pp = GoogleOpenBboxPreprocessor(DATA_DIR, images_dirname='Bathtub_Shower')
 
     print('Parsing Label Data...')
-    bb_pp.parse_label_data(parallel=True)
+    bb_pp.parse_label_data(parallel=False)
     print('Done!')
 
     print('Generating GT visualizations...')
     bb_pp.viz_labels(parallel=True)
     print('Done!')
 
-    bb_pp.filter_label_data(bin_name='Bathtub-Shower', filter_labels_readable=['Bathtub', 'Shower'],
-                            copy=True, parallel=False)
-    k = 0
+    print('Generating train-val lists...')
+    bb_pp.gen_train_val_lists(['Bathroom', 'Shower'])
+    print('Done!')
