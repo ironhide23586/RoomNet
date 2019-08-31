@@ -31,7 +31,7 @@ from preprocess_google_open_dataset import GoogleOpenBboxPreprocessor
 DATA_DIR = './data/Google-Open-Images'
 
 IMG_SIDE = 224
-TRAIN_BATCH_SIZE = 45
+TRAIN_BATCH_SIZE = 8
 TRAIN_STEPS = 100000
 SAVE_FREQ = 10
 LEARN_RATE = 2e-4
@@ -51,23 +51,20 @@ if __name__ == '__main__':
     google_open_bbox_preprocessor = GoogleOpenBboxPreprocessor(DATA_DIR, ['Bathtub', 'Shower'],
                                                                images_dirname='Bathtub_Shower', init=True,
                                                                shuffle=True, train_frac=.8)
-    train_data_reader = DataFeeder(google_open_bbox_preprocessor, batch_size=TRAIN_BATCH_SIZE, batches_per_queue=40,
+    train_data_reader = DataFeeder(google_open_bbox_preprocessor, batch_size=TRAIN_BATCH_SIZE, batches_per_queue=10,
                                    shuffle=True, im_side=IMG_SIDE, random_crop=True, preprocess=True, split='train')
-    wait()
-    val_data_reader = DataFeeder(google_open_bbox_preprocessor, batch_size=64, batches_per_queue=10,
+    val_data_reader = DataFeeder(google_open_bbox_preprocessor, batch_size=8, batches_per_queue=10,
                                  shuffle=False, im_side=IMG_SIDE, random_crop=False, preprocess=False, split='val')
 
     nn = RoomNet(num_classes=2, im_side=IMG_SIDE, num_steps=TRAIN_STEPS, learn_rate=LEARN_RATE,
                  dropout_rate=DROPOUT_RATE, l2_regularizer_coeff=L2_REGULARIZATION_COEFF,
                  dropout_enabled=DROPOUT_ENABLED, update_batchnorm_means_vars=UPDATE_BATCHNORM_MOVING_VARS,
-                 compute_bn_mean_var=COMPUTE_BN_MEAN_VAR, load_training_vars=False)
+                 compute_bn_mean_var=COMPUTE_BN_MEAN_VAR, load_training_vars=False,
+                 train_batch_size=TRAIN_BATCH_SIZE)
     nn.init()
     nn.load('final_model/roomnet')
     # nn.load()
-    if os.path.isfile(TRAIN_STATS_FILE):
-        all_train_stats = json.load(open(TRAIN_STATS_FILE, 'r'))
-    else:
-        all_train_stats = []
+
     for train_iter in range(nn.start_step, nn.start_step + TRAIN_STEPS):
         if train_iter % SAVE_FREQ == 0 and train_iter > nn.start_step:
             x_val, y_val = val_data_reader.dequeue()
@@ -88,9 +85,6 @@ if __name__ == '__main__':
                            'precisions': list(map(float, list(prec))),
                            'recalls': list(map(float, list(rec))),
                            'f-scores': list(map(float, list(fsc)))}
-            all_train_stats.append(train_stats)
-            print('Dumping train stats to', TRAIN_STATS_FILE)
-            json.dump(all_train_stats, open(TRAIN_STATS_FILE, 'w'), indent=4, sort_keys=True)
         x, y = train_data_reader.dequeue()
         loss, train_step, learn_rate = nn.train_step(x, y)
         print('Step', train_step, 'loss =', loss, 'learn_rate =', learn_rate)

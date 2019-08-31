@@ -74,7 +74,7 @@ class RoomNet:
                 for k, v in layer_data.items():
                     self.layername_var_map[k] = v
 
-        self.loss_op = self.loss_function([self.y_tensor, self.num_y_bboxes_per_image], self.out_op)
+        self.loss_op = self.loss_function([self.y_tensor, self.num_y_bboxes_per_image_tensor], self.out_op)
         self.opt = tf.train.AdamOptimizer(learning_rate=self.learn_rate_tf)
         grads = tf.gradients(self.loss_op, self.trainable_vars, stop_gradients=self.stop_grad_vars)
 
@@ -252,7 +252,7 @@ class RoomNet:
                                                               preds_per_img, box_priors,
                                                               iou_thresh=iou_thresh, alpha=alpha,
                                                               logits=logits)
-            curr_img_loss = tf.cond(num_gt > 0, curr_img_loss_fn, lambda: 0.)
+            curr_img_loss = tf.cond(num_gt > 0, curr_img_loss_fn, lambda: 0.)  # TODO: Dim mislaigned -SB 30/08/2019
             batch_losses.append(curr_img_loss)
         curr_loss = tf.reduce_mean(batch_losses)
         return curr_loss
@@ -544,7 +544,7 @@ class RoomNet:
         v1 = tf.global_variables()
         ssdlite_vars = v1[len(v0):]
 
-        trainable_vars = tf.trainable_variables()
+        trainable_vars = [v for v in tf.trainable_variables() if v not in stop_grad_vars]
         restore_excluded_vars = ssdlite_vars
         layer_outs = [detection_out, classification_out_softmax, classification_out]
         return layer_outs, trainable_vars, stop_grad_vars, restore_excluded_vars

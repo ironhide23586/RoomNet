@@ -61,7 +61,7 @@ class DataFeeder:
     def random_sliding_square_crop(self, im):
         h, w, _ = im.shape
         if h == w:
-            return im.copy()
+            return im.copy(), [0, w], [0, h]
         min_dim = w
         max_dim = h
         if h < w:
@@ -94,6 +94,8 @@ class DataFeeder:
             height_range = [offset, offset + h]
         else:
             x_pp = x.copy()
+            width_range = [0, w]
+            height_range = [0, h]
         return x_pp, width_range, height_range
 
     def preprocess_set(self, x, y):
@@ -119,7 +121,7 @@ class DataFeeder:
         for det in y:
             if det['LabelName'] in target_label_ids:
                 filtered_ys.append(det)
-        num_gts = 0
+        num_dets = 0
         for det in filtered_ys:
             xmin = np.clip(w * det['XMin'], w_rng[0], w_rng[1]) - w_rng[0]
             ymin = np.clip(h * det['YMin'], h_rng[0], h_rng[1]) - h_rng[0]
@@ -140,15 +142,12 @@ class DataFeeder:
             label_name_readable = self.data_preprocessor.labelid2readable_map[det['LabelName']]
             cv2.rectangle(x_pp, tlxy, brxy, (0, 255, 0), 2)
 
-            y_pp.append(yxhw_bbox_normalized)
-            num_gts += 1
+            class_idx = self.data_preprocessor.label_mappings[det['LabelName']]['class_idx']
+            y_pp.append(list(yxhw_bbox_normalized) + [class_idx])
+            num_dets += 1
         y_pp = np.array(y_pp)
-        return x_pp, y_pp
-
-
-
-
-
+        y_gt = y_pp, num_dets
+        return x_pp, y_gt
 
     def read_x(self, fpath):
         return cv2.imread(fpath)
@@ -158,7 +157,8 @@ class DataFeeder:
 
     def fpath2data(self, batch_fpaths):
         batch_data_x = []
-        batch_data_y = []
+        batch_data_y_bboxes = None
+        batch_data_y_counts = []
         batch_data_x_fpaths = []
         batch_data_y_fpaths = []
         for fpath_set in batch_fpaths:
@@ -168,11 +168,16 @@ class DataFeeder:
             batch_data_x_fpaths.append(x_path)
             batch_data_y_fpaths.append(y_path)
             x_data, y_data = self.preprocess_set(x_data, y_data)
+            y_bboxes, y_cnts = y_data
+            if batch_data_y_bboxes is None:
+                batch_data_y_bboxes = y_bboxes
+            else:
+                batch_data_y_bboxes = np.vstack([batch_data_y_bboxes, y_bboxes])
+            batch_data_y_counts.append(y_cnts)
             batch_data_x.append(x_data)
-            batch_data_y.append(y_data)
         batch_data_x = np.array(batch_data_x)
-        batch_data_y = np.array(batch_data_y)
         batch_data_x_fpaths = np.array(batch_data_x_fpaths)
+        batch_data_y = batch_data_y_bboxes, batch_data_y_counts
         return batch_data_x, batch_data_y, batch_data_x_fpaths, batch_data_y_fpaths
 
     def get_data(self, batch_size=None):
