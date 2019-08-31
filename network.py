@@ -59,7 +59,10 @@ class RoomNet:
         self.dropout_enabled = dropout_enabled
         self.l2_regularizer_coeff = l2_regularizer_coeff
         self.y_tensor = tf.placeholder(dtype=tf.float32, shape=(None, 4 + 1), name='gt_labels_agg')
-        self.num_y_bboxes_per_image_tensor = tf.placeholder(dtype=tf.int32, shape=(None))  # Number of GT bboxes in each image
+
+        # Number of GT bboxes in each image
+        self.num_y_bboxes_per_image_tensor = tf.placeholder(dtype=tf.int32, shape=(None))
+
         if self.dropout_enabled:
             self.dropout_rate = dropout_rate
             self.dropout_rate_tensor = tf.placeholder(tf.float32, shape=())

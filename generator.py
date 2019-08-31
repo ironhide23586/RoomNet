@@ -70,36 +70,85 @@ class DataFeeder:
         start_idx = np.random.randint(max_dim - min_dim)
         end_idx = start_idx + min_dim
         if h < w:
+            width_range = [start_idx, end_idx]
+            height_range = [0, h]
+        else:
+            width_range = [0, w]
+            height_range = [start_idx, end_idx]
+        if h < w:
             im_cropped = im[:, start_idx:end_idx, :]
         else:
             im_cropped = im[start_idx:end_idx, :, :]
-        return im_cropped
+        return im_cropped, width_range, height_range
 
     def center_crop(self, x):
         h, w, _ = x.shape
         offset = abs((w - h) // 2)
         if h < w:
             x_pp = x[:, offset:offset + h, :]
+            width_range = [offset, offset + h]
+            height_range = [0, h]
         elif w < h:
             x_pp = x[offset:offset + w, :, :]
+            width_range = [0, w]
+            height_range = [offset, offset + h]
         else:
             x_pp = x.copy()
-        return x_pp
+        return x_pp, width_range, height_range
 
     def preprocess_set(self, x, y):
+        h, w, _ = x.shape
         if self.random_crop:
-            x_pp = self.random_sliding_square_crop(x)
+            x_raw = self.random_sliding_square_crop(x)
         else:
-            x_pp = self.center_crop(x)
+            x_raw = self.center_crop(x)
+        x_pp, w_rng, h_rng = x_raw
+        org_side = x_pp.shape[0]
         x_pp = cv2.resize(x_pp, (self.im_side, self.im_side))
-        if self.data_preprocess:
-            # angle = np.random.uniform(0, 360)
-            # x_pp = np.array(Image.fromarray(x_pp).rotate(angle))
-            if np.random.uniform() > .5:
-                x_pp = np.fliplr(x_pp)
-            if np.random.uniform() > .5:
-                x_pp = np.flipud(x_pp)
-        return x_pp, y
+        # if self.data_preprocess:
+        #     # angle = np.random.uniform(0, 360)
+        #     # x_pp = np.array(Image.fromarray(x_pp).rotate(angle))
+        #     if np.random.uniform() > .5:
+        #         x_pp = np.fliplr(x_pp)
+        #     if np.random.uniform() > .5:
+        #         x_pp = np.flipud(x_pp)
+        filtered_ys = []
+        y_pp = []
+        target_label_ids = [self.data_preprocessor.readable2labelid_map[self.data_preprocessor.target_labels[i]]
+                            for i in range(len(self.data_preprocessor.target_labels))]
+        for det in y:
+            if det['LabelName'] in target_label_ids:
+                filtered_ys.append(det)
+        num_gts = 0
+        for det in filtered_ys:
+            xmin = np.clip(w * det['XMin'], w_rng[0], w_rng[1]) - w_rng[0]
+            ymin = np.clip(h * det['YMin'], h_rng[0], h_rng[1]) - h_rng[0]
+            xmax = np.clip(w * det['XMax'], w_rng[0], w_rng[1]) - w_rng[0]
+            ymax = np.clip(h * det['YMax'], h_rng[0], h_rng[1]) - h_rng[0]
+            bbox_h = ymax - ymin
+            bbox_w = xmax - xmin
+            area = bbox_w * bbox_h
+            if area < 0:
+                continue
+            bbox_cy = ymin + bbox_h / 2
+            bbox_cx = xmin + bbox_w / 2
+            yxhw_bbox_normalized = np.array([bbox_cy, bbox_cx, bbox_h, bbox_w]) / org_side
+            yxhw_bbox = (yxhw_bbox_normalized * self.im_side).astype(np.int)
+
+            tlxy = tuple((yxhw_bbox[:2] - yxhw_bbox[2:] / 2)[[1, 0]].astype(np.int))
+            brxy = tuple((yxhw_bbox[:2] + yxhw_bbox[2:] / 2)[[1, 0]].astype(np.int))
+            label_name_readable = self.data_preprocessor.labelid2readable_map[det['LabelName']]
+            cv2.rectangle(x_pp, tlxy, brxy, (0, 255, 0), 2)
+
+            y_pp.append(yxhw_bbox_normalized)
+            num_gts += 1
+        y_pp = np.array(y_pp)
+        return x_pp, y_pp
+
+
+
+
+
 
     def read_x(self, fpath):
         return cv2.imread(fpath)
@@ -151,11 +200,11 @@ class DataFeeder:
         start_idx = (self.batch_iters - 1) * self.batch_size
         end_idx = start_idx + self.batch_size
         self.batch_fpaths = self.input_fpaths[start_idx:end_idx]
-        # batch_data_x, batch_data_y, batch_data_x_fpaths, batch_data_y_fpaths = self.fpath2data(self.batch_fpaths)
-        try:
-            batch_data_x, batch_data_y, batch_data_x_fpaths, batch_data_y_fpaths = self.fpath2data(self.batch_fpaths)
-        except:
-            print(self.batch_fpaths)
+        batch_data_x, batch_data_y, batch_data_x_fpaths, batch_data_y_fpaths = self.fpath2data(self.batch_fpaths)
+        # try:
+        #     batch_data_x, batch_data_y, batch_data_x_fpaths, batch_data_y_fpaths = self.fpath2data(self.batch_fpaths)
+        # except:
+        #     print(self.batch_fpaths)
         return batch_data_x, batch_data_y, batch_data_x_fpaths, batch_data_y_fpaths, train_state
 
     def __queue_filler_process(self):
