@@ -33,11 +33,14 @@ class RoomNet:
         self.compute_bn_mean_var = compute_bn_mean_var
         self.optimized_inference = optimized_inference
         self.train_batch_size = train_batch_size
+        self.nms_iou_threshold = .2
+        self.nms_score_threshold = .5
         self.ssd_endpoints = []
         self.x_tensor = tf.placeholder(tf.float32, shape=(self.train_batch_size, self.im_side, self.im_side, 3),
                                        name='input_x_tensor')
         self.layers = []
         self.layer_var_mappings_ordered = []
+        self.anchor_bboxes = None
 
         self.start_step = start_step
         self.step = start_step
@@ -51,8 +54,11 @@ class RoomNet:
         if self.optimized_inference:
             self.dropout_enabled = False
             self.out_op, _, _, _ = self.init_nn_graph()
-            self.outs_softmax_op = tf.nn.softmax(self.out_op)
-            self.outs_final = tf.argmax(self.outs_softmax_op, axis=-1)
+
+            detection_out, classification_out_softmax, classification_out = self.out_op
+            self.outs_final = self.ssd_postprocessing_tf_batch(detection_out, self.anchor_bboxes,
+                                                               classification_out_softmax)
+
             self.vars_to_keep = [v for v in tf.global_variables() if v not in self.unsaved_vars]
             self.restorer = tf.train.Saver(var_list=self.vars_to_keep)
             return
@@ -67,6 +73,10 @@ class RoomNet:
             self.dropout_rate = dropout_rate
             self.dropout_rate_tensor = tf.placeholder(tf.float32, shape=())
         self.out_op, self.trainable_vars, self.stop_grad_vars, self.restore_excluded_vars = self.init_nn_graph()
+
+        detection_out, classification_out_softmax, classification_out = self.out_op
+        self.outs_final = self.ssd_postprocessing_tf_batch(detection_out, self.anchor_bboxes,
+                                                           classification_out_softmax)
 
         self.layername_var_map = {}
         for layer_params in self.layer_var_mappings_ordered:
@@ -100,13 +110,20 @@ class RoomNet:
             os.makedirs(self.model_folder)
         self.model_fpath_prefix = self.model_folder + '/' + 'roomnet-'
 
+    def ssd_postprocessing_tf_batch(self, raw_bboxes_batch, box_priors, raw_softmax_outs_batch, clip=True):
+        out_ops = []
+        for idx in range(self.train_batch_size):
+            output_locations, output_classes, output_scores, num_detections, dbg \
+                = self.ssd_postprocessing_tf(raw_bboxes_batch[idx], box_priors,
+                                             raw_softmax_outs_batch[idx], clip=clip)
+            out_ops.append([output_locations, output_classes, output_scores, num_detections])
+        return out_ops
+
     def loss_function(self, y_truth, y_pred):
         detection_out, classification_out_softmax, classification_out = y_pred
         gt_bboxes, gt_bboxes_counts = y_truth
-        ssd_endpoint_sides = [int(ep.shape[1]) for ep in self.ssd_endpoints]
-        anchor_bboxes = self.gen_anchors(ssd_endpoint_sides)
         loss_nr = self.loss_op_tf(detection_out, classification_out_softmax, gt_bboxes,
-                                  gt_bboxes_counts, anchor_bboxes, logits=False)
+                                  gt_bboxes_counts, self.anchor_bboxes, logits=False)
         train_vars = [v for v in tf.trainable_variables() if v not in self.stop_grad_vars]
         loss_l2 = tf.add_n([tf.nn.l2_loss(v) for v in train_vars if 'bias' not in v.name]) * self.l2_regularizer_coeff
         loss = loss_nr + loss_l2
@@ -303,13 +320,66 @@ class RoomNet:
             self.sess.run(step_assign_op)
         print('Model restored from', model_path)
 
+    def create_viz(self, m_in, locs, classes, scores,
+                   labels_filepath='custom_labels_list.txt', conf_thresh=[0.95] * 11):
+        with open(labels_filepath, 'r') as f:
+            labels = f.readlines()
+        labels = [l.strip() for l in labels]
+        im = im_in.astype(np.uint8)
+        out_locs_tlxy_brxy = []
+        out_locs_tlxy_brxy_normalized = []
+        out_class_ids = []
+        out_class_names = []
+        out_scores = []
+        img_h, img_w, _ = im_in.shape
+        for i in range(locs[0].shape[0]):
+            class_id = int(classes[0][i])
+            tly_norm, bry_norm = locs[0][i][[0, 2]]
+            tlx_norm, brx_norm = locs[0][i][[1, 3]]
+
+            tly, bry = (locs[0][i][[0, 2]] * img_h).astype(np.int)
+            tlx, brx = (locs[0][i][[1, 3]] * img_w).astype(np.int)
+
+            out_locs_tlxy_brxy.append([tlx, tly, brx, bry])
+            out_locs_tlxy_brxy_normalized.append([tlx_norm, tly_norm, brx_norm, bry_norm])
+            out_class_ids.append(class_id)
+            out_class_names.append(labels[class_id])
+            out_scores.append(scores[0][i])
+
+            if scores[0][i] > conf_thresh[class_id]:
+                cv2.rectangle(im, (tlx, tly), (brx, bry), (int(label_colors[class_id][0]),
+                                                           int(label_colors[class_id][1]),
+                                                           int(label_colors[class_id][2])), 2)
+                cv2.putText(im, str(labels[classes[0][i]]) + ' ' + str(scores[0][i]),
+                            (tlx - 2, tly - 2),
+                            cv2.FONT_HERSHEY_SIMPLEX, .5, (int(label_colors[class_id][0]),
+                                                           int(label_colors[class_id][1]),
+                                                           int(label_colors[class_id][2])), 1, cv2.LINE_AA)
+
+        out_locs_tlxy_brxy = np.array(out_locs_tlxy_brxy)
+        out_locs_tlxy_brxy_normalized = np.array(out_locs_tlxy_brxy_normalized)
+        out_class_ids = np.array(out_class_ids)
+        out_class_names = np.array(out_class_names)
+        out_scores = np.array(out_scores)
+        # return im, out_locs_tlxy_brxy, out_locs_tlxy_brxy_normalized, out_class_ids, out_class_names, out_scores
+        return im
+
     def infer(self, im_in):
         im = ((im_in[:, :, :, [2, 1, 0]] / 255.) * 2) - 1
         if self.dropout_enabled:
             outs = self.sess.run(self.outs_final, feed_dict={self.x_tensor: im,
                                                              self.dropout_rate_tensor: 0.})
         else:
-            outs = self.sess.run(self.outs_final, feed_dict={self.x_tensor: im})
+            inferences_raw = self.sess.run(self.outs_final, feed_dict={self.x_tensor: im})
+            inferences_organized = []
+            for i in range(0, self.train_batch_size * 4, 4):
+                inferences_organized.append(inferences_raw[i:i + 4])
+            for i in range(len(inferences_organized)):
+                # im = create_inference_viz(images[i], inferences_organized[i], label_names)
+                for j in range(4):
+                    locs_, classes_, scores_, _ = inferences_organized[i][j]
+                    im = create_viz(images[i], locs_, classes_, scores_)
+                k = 0
         return outs
 
     def center_crop(self, x):
@@ -487,7 +557,8 @@ class RoomNet:
         self.layers.append(curr_layer)
         return net
 
-    def gen_anchors(self, fmap_sizes, anchor_bbox_base_dims=None):
+    def gen_anchors(self, anchor_bbox_base_dims=None):
+        fmap_sizes = [int(ep.shape[1]) for ep in self.ssd_endpoints]
         num_fmaps = len(fmap_sizes)
         if anchor_bbox_base_dims is None:
             zero_idx_dims = np.array([[.1, .1],
@@ -521,6 +592,105 @@ class RoomNet:
                         out_anchor_bboxes = np.vstack([out_anchor_bboxes, curr_gridbox_anchors])
         return out_anchor_bboxes
 
+    def ssd_postprocessing_tf(self, raw_bboxes, box_priors, raw_softmax_outs, clip=True):
+        legit_bboxes_tly_tlx_bry_brx, classes, scores, _ = self.ssd_postprocessing_raw_outs(raw_bboxes, box_priors,
+                                                                                            raw_softmax_outs, clip=clip)
+        print('------->', legit_bboxes_tly_tlx_bry_brx, scores)
+        selected_indices = tf.image.non_max_suppression(legit_bboxes_tly_tlx_bry_brx[0], scores[0], 10,
+                                                        iou_threshold=self.nms_iou_threshold,
+                                                        score_threshold=self.nms_score_threshold)
+        output_locations = tf.expand_dims(tf.gather(legit_bboxes_tly_tlx_bry_brx[0], selected_indices),
+                                          0, name='outputLocations')
+        output_classes = tf.expand_dims(tf.gather(classes[0], selected_indices), 0, name='outputClasses')
+        output_scores = tf.expand_dims(tf.gather(scores[0], selected_indices), 0, name='outputScores')
+        num_detections = tf.shape(selected_indices, name='numDetections')
+        debug = []
+        return output_locations, output_classes, output_scores, num_detections, debug
+
+    def raw2legit_bboxes_tf(self, raw_bboxes, box_priors_raw, clip=True):
+        cy_cx_priors = box_priors_raw[:, :2]
+        h_w_priors = box_priors_raw[:, 2:]
+
+        cy_cx_outs = raw_bboxes[:, :2]
+        cy_cx_legit_perpix = ((cy_cx_outs / 10) * h_w_priors) + cy_cx_priors
+
+        h_w_outs = raw_bboxes[:, 2:]
+        h_w_legit_perpix = tf.exp(h_w_outs / 5) * h_w_priors
+
+        tly_tlx = cy_cx_legit_perpix - (h_w_legit_perpix / 2)
+        bry_brx = cy_cx_legit_perpix + (h_w_legit_perpix / 2)
+
+        cy_cx = cy_cx_legit_perpix
+        h_w = h_w_legit_perpix
+
+        if clip:
+            tly_tlx = tf.clip_by_value(tly_tlx, 0., 1.)
+            bry_brx = tf.clip_by_value(bry_brx, 0., 1.)
+
+            cy_cx = (tly_tlx + bry_brx) / 2.
+            h_w = bry_brx - tly_tlx
+
+        bbox_outs_cy_cx_h_w = tf.concat([cy_cx, h_w], axis=1)
+        bbox_outs_tly_tlx_bry_brx = tf.concat([tly_tlx, bry_brx], axis=1)
+
+        return bbox_outs_cy_cx_h_w, bbox_outs_tly_tlx_bry_brx
+
+    def ssd_postprocessing_raw_outs(self, raw_bboxes, box_priors, raw_softmax_outs, clip=True):
+        box_priors_tf = tf.constant(box_priors, dtype=tf.float32)
+        legit_bboxes_cy_cx_h_w, legit_bboxes_tly_tlx_bry_brx = self.raw2legit_bboxes_tf(raw_bboxes, box_priors_tf,
+                                                                                        clip=clip)
+        print('#####---->', raw_softmax_outs)
+        conf_outs = raw_softmax_outs[:, 1:]
+        classes = tf.expand_dims(tf.argmax(conf_outs, axis=1), 0, name='all_class_id_outs')
+        scores = tf.expand_dims(tf.reduce_max(conf_outs, axis=1), 0, name='all_confidence_scores')
+        bboxes = tf.expand_dims(legit_bboxes_tly_tlx_bry_brx, 0, name='all_bboxes_tlyx_bryx_normalized')
+        num = tf.expand_dims(tf.shape(legit_bboxes_tly_tlx_bry_brx)[0], 0, name='all_num_detections')
+        return bboxes, classes, scores, num
+
+    def create_viz(im_in, locs, classes, scores,
+                   labels_filepath='custom_labels_list.txt', conf_thresh=[0.95] * 11):
+        with open(labels_filepath, 'r') as f:
+            labels = f.readlines()
+        labels = [l.strip() for l in labels]
+        im = im_in.astype(np.uint8)
+        out_locs_tlxy_brxy = []
+        out_locs_tlxy_brxy_normalized = []
+        out_class_ids = []
+        out_class_names = []
+        out_scores = []
+        img_h, img_w, _ = im_in.shape
+        for i in range(locs[0].shape[0]):
+            class_id = int(classes[0][i])
+            tly_norm, bry_norm = locs[0][i][[0, 2]]
+            tlx_norm, brx_norm = locs[0][i][[1, 3]]
+
+            tly, bry = (locs[0][i][[0, 2]] * img_h).astype(np.int)
+            tlx, brx = (locs[0][i][[1, 3]] * img_w).astype(np.int)
+
+            out_locs_tlxy_brxy.append([tlx, tly, brx, bry])
+            out_locs_tlxy_brxy_normalized.append([tlx_norm, tly_norm, brx_norm, bry_norm])
+            out_class_ids.append(class_id)
+            out_class_names.append(labels[class_id])
+            out_scores.append(scores[0][i])
+
+            if scores[0][i] > conf_thresh[class_id]:
+                cv2.rectangle(im, (tlx, tly), (brx, bry), (int(label_colors[class_id][0]),
+                                                           int(label_colors[class_id][1]),
+                                                           int(label_colors[class_id][2])), 2)
+                cv2.putText(im, str(labels[classes[0][i]]) + ' ' + str(scores[0][i]),
+                            (tlx - 2, tly - 2),
+                            cv2.FONT_HERSHEY_SIMPLEX, .5, (int(label_colors[class_id][0]),
+                                                           int(label_colors[class_id][1]),
+                                                           int(label_colors[class_id][2])), 1, cv2.LINE_AA)
+
+        out_locs_tlxy_brxy = np.array(out_locs_tlxy_brxy)
+        out_locs_tlxy_brxy_normalized = np.array(out_locs_tlxy_brxy_normalized)
+        out_class_ids = np.array(out_class_ids)
+        out_class_names = np.array(out_class_names)
+        out_scores = np.array(out_scores)
+        # return im, out_locs_tlxy_brxy, out_locs_tlxy_brxy_normalized, out_class_ids, out_class_names, out_scores
+        return im
+
     def ssdlite_nn(self, ssd_endpoints, num_box_points=4):
         detection_outs_all = [self.ssd_block_box_predictor(ssd_endpoints[0], num_box_points * 3, 0)] \
                              + [self.ssd_block_box_predictor(ssd_endpoints[i + 1], num_box_points * 6, i + 1)
@@ -552,4 +722,5 @@ class RoomNet:
         trainable_vars = [v for v in tf.trainable_variables() if v not in stop_grad_vars]
         restore_excluded_vars = ssdlite_vars
         layer_outs = [detection_out, classification_out_softmax, classification_out]
+        self.anchor_bboxes = self.gen_anchors()
         return layer_outs, trainable_vars, stop_grad_vars, restore_excluded_vars

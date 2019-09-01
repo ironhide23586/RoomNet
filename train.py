@@ -53,7 +53,7 @@ if __name__ == '__main__':
                                                                shuffle=True, train_frac=.8)
     train_data_reader = DataFeeder(google_open_bbox_preprocessor, batch_size=TRAIN_BATCH_SIZE, batches_per_queue=10,
                                    shuffle=True, im_side=IMG_SIDE, random_crop=True, preprocess=True, split='train')
-    val_data_reader = DataFeeder(google_open_bbox_preprocessor, batch_size=8, batches_per_queue=10,
+    val_data_reader = DataFeeder(google_open_bbox_preprocessor, batch_size=TRAIN_BATCH_SIZE, batches_per_queue=30,
                                  shuffle=False, im_side=IMG_SIDE, random_crop=False, preprocess=False, split='val')
 
     nn = RoomNet(num_classes=2, im_side=IMG_SIDE, num_steps=TRAIN_STEPS, learn_rate=LEARN_RATE,
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     # nn.load()
 
     for train_iter in range(nn.start_step, nn.start_step + TRAIN_STEPS):
-        if train_iter % SAVE_FREQ == 0 and train_iter > nn.start_step:
+        if train_iter % SAVE_FREQ == 0:# and train_iter > nn.start_step:
             x_val, y_val = val_data_reader.dequeue()
             y_vals = list(y_val)
             y_preds = []
