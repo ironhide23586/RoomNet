@@ -105,7 +105,8 @@ class RoomNet:
         gt_bboxes, gt_bboxes_counts = y_truth
         ssd_endpoint_sides = [int(ep.shape[1]) for ep in self.ssd_endpoints]
         anchor_bboxes = self.gen_anchors(ssd_endpoint_sides)
-        loss_nr = self.loss_op_tf(detection_out, classification_out, gt_bboxes, gt_bboxes_counts, anchor_bboxes)
+        loss_nr = self.loss_op_tf(detection_out, classification_out_softmax, gt_bboxes,
+                                  gt_bboxes_counts, anchor_bboxes, logits=False)
         train_vars = [v for v in tf.trainable_variables() if v not in self.stop_grad_vars]
         loss_l2 = tf.add_n([tf.nn.l2_loss(v) for v in train_vars if 'bias' not in v.name]) * self.l2_regularizer_coeff
         loss = loss_nr + loss_l2
@@ -148,12 +149,15 @@ class RoomNet:
         pos_class_preds = tf.boolean_mask(local_class_pred, pos_mask)
         if logits:  # TODO - throws error; needs fix
             gt_expanded = tf.zeros_like(pos_class_preds)
-            gt_expanded = tf.scatter_update(gt_expanded, tf.get_variable(tf.tile([class_gt + 1], [num_pos])),
+            # gt_expanded = tf.scatter_update(gt_expanded, tf.get_variable(tf.tile([class_gt + 1], [num_pos])),
+            #                                 tf.get_variable(tf.tile([1.], [num_pos])))
+            gt_expanded = tf.scatter_update(gt_expanded, tf.get_variable(tf.tile([class_gt], [num_pos])),
                                             tf.get_variable(tf.tile([1.], [num_pos])))
             pos_class_loss = tf.nn.softmax_cross_entropy_with_logits(logits=pos_class_preds,
                                                                      labels=gt_expanded)
         else:
-            pos_class_loss = tf.reduce_sum(tf.log(pos_class_preds[:, class_gt + 1]))
+            # pos_class_loss = tf.reduce_sum(tf.log(pos_class_preds[:, class_gt + 1]))
+            pos_class_loss = tf.reduce_sum(tf.log(pos_class_preds[:, class_gt]))
 
         # Hard negative mining
         neg_mask = ~pos_mask
@@ -244,7 +248,8 @@ class RoomNet:
     def loss_op_tf(self, loc_preds, class_preds, gts, num_gts, box_priors_py, iou_thresh=.5, alpha=1., logits=False):
         box_priors = tf.constant(box_priors_py, dtype=tf.float32)
         batch_losses = []
-        preds_per_img = tf.shape(box_priors)[0]
+        # preds_per_img = tf.shape(box_priors)[0]
+        preds_per_img = box_priors_py.shape[0]
         for in_batch_idx in range(self.train_batch_size):
             num_gt = num_gts[in_batch_idx]
             curr_img_loss_fn = lambda: self.loss_op_tf_worker(loc_preds, class_preds,

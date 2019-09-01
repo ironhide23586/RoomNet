@@ -137,10 +137,10 @@ class DataFeeder:
             yxhw_bbox_normalized = np.array([bbox_cy, bbox_cx, bbox_h, bbox_w]) / org_side
             yxhw_bbox = (yxhw_bbox_normalized * self.im_side).astype(np.int)
 
-            tlxy = tuple((yxhw_bbox[:2] - yxhw_bbox[2:] / 2)[[1, 0]].astype(np.int))
-            brxy = tuple((yxhw_bbox[:2] + yxhw_bbox[2:] / 2)[[1, 0]].astype(np.int))
-            label_name_readable = self.data_preprocessor.labelid2readable_map[det['LabelName']]
-            cv2.rectangle(x_pp, tlxy, brxy, (0, 255, 0), 2)
+            # tlxy = tuple((yxhw_bbox[:2] - yxhw_bbox[2:] / 2)[[1, 0]].astype(np.int))
+            # brxy = tuple((yxhw_bbox[:2] + yxhw_bbox[2:] / 2)[[1, 0]].astype(np.int))
+            # label_name_readable = self.data_preprocessor.labelid2readable_map[det['LabelName']]
+            # cv2.rectangle(x_pp, tlxy, brxy, (0, 255, 0), 2)
 
             class_idx = self.data_preprocessor.label_mappings[det['LabelName']]['class_idx']
             y_pp.append(list(yxhw_bbox_normalized) + [class_idx])
