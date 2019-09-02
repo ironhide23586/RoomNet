@@ -15,6 +15,7 @@ Website: https://www.linkedin.com/in/souham/
 
 import os
 from glob import glob
+import time
 
 import tensorflow as tf
 from tensorflow.contrib import slim
@@ -98,7 +99,7 @@ class RoomNet:
         if not load_training_vars:
             self.restore_excluded_vars += [v for v in tf.all_variables() if 'Adam' in v.name or 'power' in v.name]
         else:
-            self.restore_excluded_vars = []
+            self.restore_excluded_vars += []
 
         self.vars_to_keep = [v for v in tf.global_variables() if v not in self.unsaved_vars]
         self.vars_to_restore = [v for v in self.vars_to_keep if v not in self.restore_excluded_vars]
@@ -320,11 +321,7 @@ class RoomNet:
             self.sess.run(step_assign_op)
         print('Model restored from', model_path)
 
-    def create_viz(self, m_in, locs, classes, scores,
-                   labels_filepath='custom_labels_list.txt', conf_thresh=[0.95] * 11):
-        with open(labels_filepath, 'r') as f:
-            labels = f.readlines()
-        labels = [l.strip() for l in labels]
+    def out_postprocess(self, im_in, locs, classes, scores, labels=['Bathtub', 'Shower'], conf_thresh=[0.7] * 2):
         im = im_in.astype(np.uint8)
         out_locs_tlxy_brxy = []
         out_locs_tlxy_brxy_normalized = []
@@ -332,6 +329,9 @@ class RoomNet:
         out_class_names = []
         out_scores = []
         img_h, img_w, _ = im_in.shape
+
+        label_colors = [[0, 255, 0], [255, 0, 0]]
+
         for i in range(locs[0].shape[0]):
             class_id = int(classes[0][i])
             tly_norm, bry_norm = locs[0][i][[0, 2]]
@@ -361,25 +361,29 @@ class RoomNet:
         out_class_ids = np.array(out_class_ids)
         out_class_names = np.array(out_class_names)
         out_scores = np.array(out_scores)
-        # return im, out_locs_tlxy_brxy, out_locs_tlxy_brxy_normalized, out_class_ids, out_class_names, out_scores
-        return im
+        return im, out_locs_tlxy_brxy, out_locs_tlxy_brxy_normalized, out_class_ids, out_class_names, out_scores
+        # return im
 
     def infer(self, im_in):
         im = ((im_in[:, :, :, [2, 1, 0]] / 255.) * 2) - 1
         if self.dropout_enabled:
-            outs = self.sess.run(self.outs_final, feed_dict={self.x_tensor: im,
-                                                             self.dropout_rate_tensor: 0.})
+            inferences_raw = self.sess.run(self.outs_final, feed_dict={self.x_tensor: im,
+                                                                       self.dropout_rate_tensor: 0.})
         else:
             inferences_raw = self.sess.run(self.outs_final, feed_dict={self.x_tensor: im})
-            inferences_organized = []
-            for i in range(0, self.train_batch_size * 4, 4):
-                inferences_organized.append(inferences_raw[i:i + 4])
-            for i in range(len(inferences_organized)):
-                # im = create_inference_viz(images[i], inferences_organized[i], label_names)
-                for j in range(4):
-                    locs_, classes_, scores_, _ = inferences_organized[i][j]
-                    im = create_viz(images[i], locs_, classes_, scores_)
-                k = 0
+        inferences_organized = []
+        for i in range(0, self.train_batch_size * 4, 4):
+            inferences_organized.append(inferences_raw[i:i + 4])
+        outs = []
+        for i in range(len(inferences_organized)):
+            for j in range(4):
+                locs_, classes_, scores_, _ = inferences_organized[i][j]
+                im_viz, out_locs_tlxy_brxy, out_locs_tlxy_brxy_normalized, \
+                out_class_ids, out_class_names, out_scores = self.out_postprocess(im_in[i], locs_,
+                                                                                  classes_, scores_)
+                outs.append([im_viz, out_locs_tlxy_brxy, out_locs_tlxy_brxy_normalized,
+                             out_class_ids, out_class_names, out_scores])
+                cv2.imwrite()
         return outs
 
     def center_crop(self, x):
@@ -647,50 +651,6 @@ class RoomNet:
         num = tf.expand_dims(tf.shape(legit_bboxes_tly_tlx_bry_brx)[0], 0, name='all_num_detections')
         return bboxes, classes, scores, num
 
-    def create_viz(im_in, locs, classes, scores,
-                   labels_filepath='custom_labels_list.txt', conf_thresh=[0.95] * 11):
-        with open(labels_filepath, 'r') as f:
-            labels = f.readlines()
-        labels = [l.strip() for l in labels]
-        im = im_in.astype(np.uint8)
-        out_locs_tlxy_brxy = []
-        out_locs_tlxy_brxy_normalized = []
-        out_class_ids = []
-        out_class_names = []
-        out_scores = []
-        img_h, img_w, _ = im_in.shape
-        for i in range(locs[0].shape[0]):
-            class_id = int(classes[0][i])
-            tly_norm, bry_norm = locs[0][i][[0, 2]]
-            tlx_norm, brx_norm = locs[0][i][[1, 3]]
-
-            tly, bry = (locs[0][i][[0, 2]] * img_h).astype(np.int)
-            tlx, brx = (locs[0][i][[1, 3]] * img_w).astype(np.int)
-
-            out_locs_tlxy_brxy.append([tlx, tly, brx, bry])
-            out_locs_tlxy_brxy_normalized.append([tlx_norm, tly_norm, brx_norm, bry_norm])
-            out_class_ids.append(class_id)
-            out_class_names.append(labels[class_id])
-            out_scores.append(scores[0][i])
-
-            if scores[0][i] > conf_thresh[class_id]:
-                cv2.rectangle(im, (tlx, tly), (brx, bry), (int(label_colors[class_id][0]),
-                                                           int(label_colors[class_id][1]),
-                                                           int(label_colors[class_id][2])), 2)
-                cv2.putText(im, str(labels[classes[0][i]]) + ' ' + str(scores[0][i]),
-                            (tlx - 2, tly - 2),
-                            cv2.FONT_HERSHEY_SIMPLEX, .5, (int(label_colors[class_id][0]),
-                                                           int(label_colors[class_id][1]),
-                                                           int(label_colors[class_id][2])), 1, cv2.LINE_AA)
-
-        out_locs_tlxy_brxy = np.array(out_locs_tlxy_brxy)
-        out_locs_tlxy_brxy_normalized = np.array(out_locs_tlxy_brxy_normalized)
-        out_class_ids = np.array(out_class_ids)
-        out_class_names = np.array(out_class_names)
-        out_scores = np.array(out_scores)
-        # return im, out_locs_tlxy_brxy, out_locs_tlxy_brxy_normalized, out_class_ids, out_class_names, out_scores
-        return im
-
     def ssdlite_nn(self, ssd_endpoints, num_box_points=4):
         detection_outs_all = [self.ssd_block_box_predictor(ssd_endpoints[0], num_box_points * 3, 0)] \
                              + [self.ssd_block_box_predictor(ssd_endpoints[i + 1], num_box_points * 6, i + 1)
@@ -717,10 +677,11 @@ class RoomNet:
         v0 = tf.global_variables()
         detection_out, classification_out_softmax, classification_out = self.ssdlite_nn(self.ssd_endpoints)
         v1 = tf.global_variables()
-        ssdlite_vars = v1[len(v0):]
+        # ssdlite_vars = v1[len(v0):]
 
         trainable_vars = [v for v in tf.trainable_variables() if v not in stop_grad_vars]
-        restore_excluded_vars = ssdlite_vars
+        # restore_excluded_vars = ssdlite_vars
+        restore_excluded_vars = []
         layer_outs = [detection_out, classification_out_softmax, classification_out]
         self.anchor_bboxes = self.gen_anchors()
         return layer_outs, trainable_vars, stop_grad_vars, restore_excluded_vars

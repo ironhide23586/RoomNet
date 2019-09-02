@@ -67,24 +67,25 @@ if __name__ == '__main__':
 
     for train_iter in range(nn.start_step, nn.start_step + TRAIN_STEPS):
         if train_iter % SAVE_FREQ == 0:# and train_iter > nn.start_step:
-            # x_val, y_val = val_data_reader.dequeue()
-            # y_vals = list(y_val)
-            # y_preds = []
-            # print('Validating model at step', nn.step)
-            # while not val_data_reader.train_state['previous_epoch_done']:
-            #     y_pred = nn.infer(x_val)
-            #     y_preds += list(y_pred)
-            #     x_val, y_val = val_data_reader.dequeue()
-            #     y_vals += list(y_val)
-            # print('Inference Complete!')
-            # y_vals = y_vals[:len(y_preds)]
-            # acc = accuracy_score(y_vals, y_preds)
-            # prec, rec, fsc, supp = precision_recall_fscore_support(y_vals, y_preds)
-            # nn.save(suffix=str(acc))
-            # train_stats = {'step': int(nn.step), 'accuracy': float(acc),
-            #                'precisions': list(map(float, list(prec))),
-            #                'recalls': list(map(float, list(rec))),
-            #                'f-scores': list(map(float, list(fsc)))}
+            x_val, y_val = val_data_reader.dequeue()
+            y_vals = list(y_val)
+            y_preds = []
+            print('Validating model at step', nn.step)
+            while not val_data_reader.train_state['previous_epoch_done']:
+                y_pred = nn.infer(x_val)
+
+                y_preds += y_pred
+                x_val, y_val = val_data_reader.dequeue()
+                y_vals += list(y_val)
+            print('Inference Complete!')
+            y_vals = y_vals[:len(y_preds)]
+            acc = accuracy_score(y_vals, y_preds)
+            prec, rec, fsc, supp = precision_recall_fscore_support(y_vals, y_preds)
+            nn.save(suffix=str(acc))
+            train_stats = {'step': int(nn.step), 'accuracy': float(acc),
+                           'precisions': list(map(float, list(prec))),
+                           'recalls': list(map(float, list(rec))),
+                           'f-scores': list(map(float, list(fsc)))}
 
             print('Saving')
             nn.save()
