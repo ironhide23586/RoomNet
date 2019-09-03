@@ -5,3 +5,5 @@ final_deliverables/
 test_images/
 data/
 .idea/
+rough/
+train_logs/

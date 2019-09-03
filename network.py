@@ -42,6 +42,8 @@ class RoomNet:
         self.layers = []
         self.layer_var_mappings_ordered = []
         self.anchor_bboxes = None
+        self.loss_l2_summary = None
+        self.loss_nr_summary = None
 
         self.start_step = start_step
         self.step = start_step
@@ -50,6 +52,7 @@ class RoomNet:
         self.learn_rate_tf = tf.train.exponential_decay(self.learn_rate, self.step_ph, num_steps, decay_rate=0.068,
                                                         name='learn_rate')
         self.unsaved_vars = [self.step_ph, self.learn_rate_tf]
+        self._dbg = []
 
         self.sess = None
         if self.optimized_inference:
@@ -75,9 +78,9 @@ class RoomNet:
             self.dropout_rate_tensor = tf.placeholder(tf.float32, shape=())
         self.out_op, self.trainable_vars, self.stop_grad_vars, self.restore_excluded_vars = self.init_nn_graph()
 
-        detection_out, classification_out_softmax, classification_out = self.out_op
-        self.outs_final = self.ssd_postprocessing_tf_batch(detection_out, self.anchor_bboxes,
-                                                           classification_out_softmax)
+        self.detection_out, self.classification_out_softmax, self.classification_out = self.out_op
+        self.outs_final = self.ssd_postprocessing_tf_batch(self.detection_out, self.anchor_bboxes,
+                                                           self.classification_out_softmax)
 
         self.layername_var_map = {}
         for layer_params in self.layer_var_mappings_ordered:
@@ -88,6 +91,9 @@ class RoomNet:
         self.loss_op = self.loss_function([self.y_tensor, self.num_y_bboxes_per_image_tensor], self.out_op)
         self.opt = tf.train.AdamOptimizer(learning_rate=self.learn_rate_tf)
         grads = tf.gradients(self.loss_op, self.trainable_vars, stop_gradients=self.stop_grad_vars)
+
+        avg_abs_grad = tf.reduce_mean([tf.reduce_mean(tf.abs(tf.reshape(grad, [-1]))) for grad in grads])
+        self.grad_summary = tf.summary.scalar('Average of Absolute gradients', avg_abs_grad)
 
         if update_batchnorm_means_vars:
             update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
@@ -110,14 +116,18 @@ class RoomNet:
         if not os.path.isdir(self.model_folder):
             os.makedirs(self.model_folder)
         self.model_fpath_prefix = self.model_folder + '/' + 'roomnet-'
+        self.loss_writer = None
 
     def ssd_postprocessing_tf_batch(self, raw_bboxes_batch, box_priors, raw_softmax_outs_batch, clip=True):
         out_ops = []
+        out_dbg = []
         for idx in range(self.train_batch_size):
             output_locations, output_classes, output_scores, num_detections, dbg \
                 = self.ssd_postprocessing_tf(raw_bboxes_batch[idx], box_priors,
                                              raw_softmax_outs_batch[idx], clip=clip)
             out_ops.append([output_locations, output_classes, output_scores, num_detections])
+            out_dbg.append(dbg)
+        self._dbg = out_dbg
         return out_ops
 
     def loss_function(self, y_truth, y_pred):
@@ -128,6 +138,8 @@ class RoomNet:
         train_vars = [v for v in tf.trainable_variables() if v not in self.stop_grad_vars]
         loss_l2 = tf.add_n([tf.nn.l2_loss(v) for v in train_vars if 'bias' not in v.name]) * self.l2_regularizer_coeff
         loss = loss_nr + loss_l2
+        self.loss_l2_summary = tf.summary.scalar('L2 Regularized Training Loss', loss)
+        self.loss_nr_summary = tf.summary.scalar('Raw Training Loss', loss_nr)
         return loss
 
     def compute_iou_centered_yxhw_vectorized_tf(self, bb0, bb1):
@@ -167,20 +179,18 @@ class RoomNet:
         pos_class_preds = tf.boolean_mask(local_class_pred, pos_mask)
         if logits:  # TODO - throws error; needs fix
             gt_expanded = tf.zeros_like(pos_class_preds)
-            # gt_expanded = tf.scatter_update(gt_expanded, tf.get_variable(tf.tile([class_gt + 1], [num_pos])),
-            #                                 tf.get_variable(tf.tile([1.], [num_pos])))
             gt_expanded = tf.scatter_update(gt_expanded, tf.get_variable(tf.tile([class_gt], [num_pos])),
                                             tf.get_variable(tf.tile([1.], [num_pos])))
             pos_class_loss = tf.nn.softmax_cross_entropy_with_logits(logits=pos_class_preds,
                                                                      labels=gt_expanded)
         else:
-            # pos_class_loss = tf.reduce_sum(tf.log(pos_class_preds[:, class_gt + 1]))
             pos_class_loss = tf.reduce_sum(tf.log(pos_class_preds[:, class_gt]))
 
         # Hard negative mining
         neg_mask = ~pos_mask
         neg_class_preds = tf.boolean_mask(local_class_pred, neg_mask)
-        neg_class_probs = neg_class_preds[:, 0]
+        # neg_class_probs = neg_class_preds[:, 0]
+        neg_class_probs = tf.reduce_max(neg_class_preds, axis=1)
         num_negs = 3 * num_pos
         neg_class_probs_topk, neg_class_probs_topk_idx = tf.nn.top_k(neg_class_probs, num_negs)
         if logits:  # TODO - throws error; needs fix
@@ -321,7 +331,7 @@ class RoomNet:
             self.sess.run(step_assign_op)
         print('Model restored from', model_path)
 
-    def out_postprocess(self, im_in, locs, classes, scores, labels=['Bathtub', 'Shower'], conf_thresh=[0.7] * 2):
+    def out_postprocess(self, im_in, locs, classes, scores, labels=['Bathtub', 'Shower'], conf_thresh=[0.5] * 2):
         im = im_in.astype(np.uint8)
         out_locs_tlxy_brxy = []
         out_locs_tlxy_brxy_normalized = []
@@ -349,7 +359,7 @@ class RoomNet:
             if scores[0][i] > conf_thresh[class_id]:
                 cv2.rectangle(im, (tlx, tly), (brx, bry), (int(label_colors[class_id][0]),
                                                            int(label_colors[class_id][1]),
-                                                           int(label_colors[class_id][2])), 2)
+                                                           int(label_colors[class_id][2])), 1)
                 cv2.putText(im, str(labels[classes[0][i]]) + ' ' + str(scores[0][i]),
                             (tlx - 2, tly - 2),
                             cv2.FONT_HERSHEY_SIMPLEX, .5, (int(label_colors[class_id][0]),
@@ -371,19 +381,16 @@ class RoomNet:
                                                                        self.dropout_rate_tensor: 0.})
         else:
             inferences_raw = self.sess.run(self.outs_final, feed_dict={self.x_tensor: im})
-        inferences_organized = []
-        for i in range(0, self.train_batch_size * 4, 4):
-            inferences_organized.append(inferences_raw[i:i + 4])
+            # tmp = self.sess.run([self.detection_out, self.classification_out_softmax, self.classification_out],
+            #                     feed_dict={self.x_tensor: im})
         outs = []
-        for i in range(len(inferences_organized)):
-            for j in range(4):
-                locs_, classes_, scores_, _ = inferences_organized[i][j]
-                im_viz, out_locs_tlxy_brxy, out_locs_tlxy_brxy_normalized, \
-                out_class_ids, out_class_names, out_scores = self.out_postprocess(im_in[i], locs_,
-                                                                                  classes_, scores_)
-                outs.append([im_viz, out_locs_tlxy_brxy, out_locs_tlxy_brxy_normalized,
-                             out_class_ids, out_class_names, out_scores])
-                cv2.imwrite()
+        for i in range(len(inferences_raw)):
+            locs_, classes_, scores_, _ = inferences_raw[i]
+            im_viz, out_locs_tlxy_brxy, out_locs_tlxy_brxy_normalized, \
+            out_class_ids, out_class_names, out_scores = self.out_postprocess(im_in[i], locs_,
+                                                                              classes_, scores_)
+            outs.append([im_viz, out_locs_tlxy_brxy, out_locs_tlxy_brxy_normalized,
+                         out_class_ids, out_class_names, out_scores])
         return outs
 
     def center_crop(self, x):
@@ -411,17 +418,26 @@ class RoomNet:
         x = ((x_in[:, :, :, [2, 1, 0]] / 255.) * 2) - 1
         y_gts, y_num_gts = y
         if self.dropout_enabled:
-            loss, _, step_tf, lr = self.sess.run([self.loss_op, self.train_op, self.step_ph, self.learn_rate_tf],
-                                                 feed_dict={self.x_tensor: x,
-                                                            self.y_tensor: y_gts,
-                                                            self.num_y_bboxes_per_image_tensor: y_num_gts,
-                                                            self.dropout_rate_tensor: self.dropout_rate})
+            loss, _, step_tf, lr, \
+            loss_l2_summ, loss_nr_summ, \
+            grad_summ = self.sess.run([self.loss_op, self.train_op, self.step_ph, self.learn_rate_tf,
+                                       self.loss_l2_summary, self.loss_nr_summary, self.grad_summary],
+                                      feed_dict={self.x_tensor: x, self.y_tensor: y_gts,
+                                                 self.num_y_bboxes_per_image_tensor: y_num_gts,
+                                                 self.dropout_rate_tensor: self.dropout_rate})
         else:
-            loss, _, step_tf, lr = self.sess.run([self.loss_op, self.train_op, self.step_ph, self.learn_rate_tf],
-                                                 feed_dict={self.x_tensor: x,
-                                                            self.y_tensor: y_gts,
-                                                            self.num_y_bboxes_per_image_tensor: y_num_gts})
+            loss, _, step_tf, lr, \
+            loss_l2_summ, loss_nr_summ, \
+            grad_summ = self.sess.run([self.loss_op, self.train_op, self.step_ph, self.learn_rate_tf,
+                                       self.loss_l2_summary, self.loss_nr_summary, self.grad_summary],
+                                      feed_dict={self.x_tensor: x, self.y_tensor: y_gts,
+                                                 self.num_y_bboxes_per_image_tensor: y_num_gts})
         self.step = step_tf
+        if self.loss_writer is None:
+            self.loss_writer = tf.summary.FileWriter('train_logs', graph=self.sess.graph)
+        self.loss_writer.add_summary(loss_l2_summ, step_tf)
+        self.loss_writer.add_summary(loss_nr_summ, step_tf)
+        self.loss_writer.add_summary(grad_summ, step_tf)
         return loss, step_tf, lr
 
     def conv_block(self, x_in, output_filters, kernel_size=3, kernel_stride=1, dilation=1, padding="VALID",
@@ -516,20 +532,23 @@ class RoomNet:
         net = tf.reshape(net, [self.train_batch_size, -1, self.num_classes])
         return net
 
-    def ssd_block(self, name, net, out_channels, scope_idx):
+    def ssd_block(self, name, net, out_channels, scope_idx, batch_norm=True):
         curr_layer_var_mappings_ordered = []
         curr_layer = []
         v0 = tf.global_variables()
-        net = slim.separable_conv2d(inputs=net, num_outputs=None, kernel_size=[3, 3], stride=1,
-                                    scope='BoxPredictor_' + str(scope_idx) + '/' + name + '_depthwise',
-                                    padding='SAME', depth_multiplier=1, normalizer_fn=None,
-                                    activation_fn=None, biases_initializer=None)
+        # net = slim.separable_conv2d(inputs=net, num_outputs=None, kernel_size=[3, 3], stride=1,
+        #                             scope='BoxPredictor_' + str(scope_idx) + '/' + name + '_depthwise',
+        #                             padding='SAME', depth_multiplier=1, normalizer_fn=None,
+        #                             activation_fn=None, biases_initializer=None)
+        net = slim.conv2d(inputs=net, num_outputs=net.shape[-1], kernel_size=[3, 3],
+                          scope='BoxPredictor_FullKernel_' + str(scope_idx) + '/' + name,
+                          stride=1, activation_fn=tf.nn.relu6, normalizer_fn=None, biases_initializer=None)
         v1 = tf.global_variables()
         layer_vars = v1[len(v0):]
         layer_var_mapping = {net.name: layer_vars}
         curr_layer_var_mappings_ordered.append(layer_var_mapping)
         curr_layer.append(net)
-        if self.compute_bn_mean_var:
+        if batch_norm:
             v0 = tf.global_variables()
             net = tf.layers.batch_normalization(net, training=self.compute_bn_mean_var)
             v1 = tf.global_variables()
@@ -546,7 +565,7 @@ class RoomNet:
         layer_var_mapping = {net.name: layer_vars}
         curr_layer_var_mappings_ordered.append(layer_var_mapping)
         curr_layer.append(net)
-        if self.compute_bn_mean_var:
+        if batch_norm:
             v0 = tf.global_variables()
             net = tf.layers.batch_normalization(net, training=self.compute_bn_mean_var)
             v1 = tf.global_variables()
@@ -567,14 +586,15 @@ class RoomNet:
         if anchor_bbox_base_dims is None:
             zero_idx_dims = np.array([[.1, .1],
                                       [0.14142136, 0.28284273],
-                                      [0.28284273, 0.14142136]])
-            first_idx_dims = np.array([[0.25      , 0.25      ],
+                                      [0.28284273, 0.14142136]]) * 2
+            first_idx_dims = np.array([[0.5, 0.5],
                                        [0.17677669, 0.35355338],
                                        [0.35355338, 0.17677669],
                                        [0.14433756, 0.43301269],
                                        [0.43303436, 0.14433035],
-                                       [0.28504387, 0.28504387]])
-            last_idx_dims = (first_idx_dims.T * ([3.2]*5 + [3.06])).T
+                                       [0.5, 0.8888]]) * 1.5
+            # last_idx_dims = (first_idx_dims.T * ([3.2]*5 + [3.06])).T
+            last_idx_dims = first_idx_dims * (2 / 1.5)
             nz_idx_dims = [first_idx_dims, last_idx_dims]
         out_anchor_bboxes = None
         for i in range(num_fmaps):
@@ -600,7 +620,7 @@ class RoomNet:
         legit_bboxes_tly_tlx_bry_brx, classes, scores, _ = self.ssd_postprocessing_raw_outs(raw_bboxes, box_priors,
                                                                                             raw_softmax_outs, clip=clip)
         print('------->', legit_bboxes_tly_tlx_bry_brx, scores)
-        selected_indices = tf.image.non_max_suppression(legit_bboxes_tly_tlx_bry_brx[0], scores[0], 10,
+        selected_indices = tf.image.non_max_suppression(legit_bboxes_tly_tlx_bry_brx[0], scores[0], 3,
                                                         iou_threshold=self.nms_iou_threshold,
                                                         score_threshold=self.nms_score_threshold)
         output_locations = tf.expand_dims(tf.gather(legit_bboxes_tly_tlx_bry_brx[0], selected_indices),
@@ -608,7 +628,7 @@ class RoomNet:
         output_classes = tf.expand_dims(tf.gather(classes[0], selected_indices), 0, name='outputClasses')
         output_scores = tf.expand_dims(tf.gather(scores[0], selected_indices), 0, name='outputScores')
         num_detections = tf.shape(selected_indices, name='numDetections')
-        debug = []
+        debug = [selected_indices, classes, scores, raw_softmax_outs]
         return output_locations, output_classes, output_scores, num_detections, debug
 
     def raw2legit_bboxes_tf(self, raw_bboxes, box_priors_raw, clip=True):
@@ -644,7 +664,8 @@ class RoomNet:
         legit_bboxes_cy_cx_h_w, legit_bboxes_tly_tlx_bry_brx = self.raw2legit_bboxes_tf(raw_bboxes, box_priors_tf,
                                                                                         clip=clip)
         print('#####---->', raw_softmax_outs)
-        conf_outs = raw_softmax_outs[:, 1:]
+        # conf_outs = raw_softmax_outs[:, 1:]
+        conf_outs = raw_softmax_outs
         classes = tf.expand_dims(tf.argmax(conf_outs, axis=1), 0, name='all_class_id_outs')
         scores = tf.expand_dims(tf.reduce_max(conf_outs, axis=1), 0, name='all_confidence_scores')
         bboxes = tf.expand_dims(legit_bboxes_tly_tlx_bry_brx, 0, name='all_bboxes_tlyx_bryx_normalized')
@@ -656,7 +677,8 @@ class RoomNet:
                              + [self.ssd_block_box_predictor(ssd_endpoints[i + 1], num_box_points * 6, i + 1)
                                 for i in range(len(ssd_endpoints[1:]))]
         classification_outs_all = [self.ssd_block_class_predictor(ssd_endpoints[0], self.num_classes * 3, 0)] \
-                                  + [self.ssd_block_class_predictor(ssd_endpoints[i + 1], self.num_classes * 6, i + 1)
+                                  + [self.ssd_block_class_predictor(ssd_endpoints[i + 1], self.num_classes * 6,
+                                                                    i + 1)
                                      for i in range(len(ssd_endpoints[1:]))]
         detection_out = tf.concat(detection_outs_all, axis=1)
         detection_out = tf.reshape(detection_out, [detection_out.shape[0].value, -1,
@@ -671,17 +693,21 @@ class RoomNet:
         layer_outs = self.conv_block(layer_outs, 64, pool_ksize=4, pool_stride=2, block_depth=2)
         layer_outs = self.conv_block(layer_outs, 128, pooling=False)
         layer_outs = self.conv_block(layer_outs, 16, pool_ksize=4, pool_stride=2, block_depth=3)
+        layer_outs = tf.nn.avg_pool(layer_outs, ksize=[1, 2, 2, 1], strides=[1, 1, 1, 1], padding="VALID")
         stop_grad_vars = tf.global_variables()
-        self.ssd_endpoints = [self.layers[4][1], self.layers[4][4], self.layers[4][7]]
+        self.ssd_endpoints = [self.layers[4][2], self.layers[4][-1], layer_outs]
 
         v0 = tf.global_variables()
         detection_out, classification_out_softmax, classification_out = self.ssdlite_nn(self.ssd_endpoints)
         v1 = tf.global_variables()
-        # ssdlite_vars = v1[len(v0):]
+        ssdlite_vars = v1[len(v0):]
 
         trainable_vars = [v for v in tf.trainable_variables() if v not in stop_grad_vars]
-        # restore_excluded_vars = ssdlite_vars
-        restore_excluded_vars = []
+
+        restore_excluded_vars = ssdlite_vars
+        # restore_excluded_vars = [v for v in tf.global_variables() if 'FullKernel' in v.name]
+        # restore_excluded_vars = []
+
         layer_outs = [detection_out, classification_out_softmax, classification_out]
         self.anchor_bboxes = self.gen_anchors()
         return layer_outs, trainable_vars, stop_grad_vars, restore_excluded_vars
