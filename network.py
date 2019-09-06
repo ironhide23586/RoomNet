@@ -76,7 +76,9 @@ class RoomNet:
         if self.dropout_enabled:
             self.dropout_rate = dropout_rate
             self.dropout_rate_tensor = tf.placeholder(tf.float32, shape=())
-        self.out_op, self.trainable_vars, self.stop_grad_vars, self.restore_excluded_vars = self.init_nn_graph()
+        self.out_op, self.trainable_vars, self.restore_excluded_vars, stop_grad_vars_and_ops = self.init_nn_graph()
+
+        self.stop_grad_vars, self.stop_grad_update_ops = stop_grad_vars_and_ops
 
         self.detection_out, self.classification_out_softmax, self.classification_out = self.out_op
         self.outs_final = self.ssd_postprocessing_tf_batch(self.detection_out, self.anchor_bboxes,
@@ -96,7 +98,8 @@ class RoomNet:
         self.grad_summary = tf.summary.scalar('Average of Absolute gradients', avg_abs_grad)
 
         if update_batchnorm_means_vars:
-            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            update_ops_all = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            update_ops = [op for op in update_ops_all if op not in self.stop_grad_update_ops]
             with tf.control_dependencies(update_ops):
                 self.train_op = self.opt.apply_gradients(zip(grads, self.trainable_vars), global_step=self.step_ph)
         else:
@@ -331,7 +334,7 @@ class RoomNet:
             self.sess.run(step_assign_op)
         print('Model restored from', model_path)
 
-    def out_postprocess(self, im_in, locs, classes, scores, labels=['Bathtub', 'Shower'], conf_thresh=[0.5] * 2):
+    def out_postprocess(self, im_in, locs, classes, scores, labels=['Bathtub', 'Shower'], conf_thresh=[.9985, .9975]):
         im = im_in.astype(np.uint8)
         out_locs_tlxy_brxy = []
         out_locs_tlxy_brxy_normalized = []
@@ -342,25 +345,56 @@ class RoomNet:
 
         label_colors = [[0, 255, 0], [255, 0, 0]]
 
-        for i in range(locs[0].shape[0]):
-            class_id = int(classes[0][i])
-            tly_norm, bry_norm = locs[0][i][[0, 2]]
-            tlx_norm, brx_norm = locs[0][i][[1, 3]]
+        locs_ = []
+        classes_ = []
+        scores_ = []
+        class_0_filt = classes[0] == 0
+        class_1_filt = classes[0] == 1
 
-            tly, bry = (locs[0][i][[0, 2]] * img_h).astype(np.int)
-            tlx, brx = (locs[0][i][[1, 3]] * img_w).astype(np.int)
+        class_0_locs = locs[0][class_0_filt]
+        class_1_locs = locs[0][class_1_filt]
+        class_0_classes = classes[0][class_0_filt]
+        class_1_classes = classes[0][class_1_filt]
+        class_0_scores = scores[0][class_0_filt]
+        class_1_scores = scores[0][class_1_filt]
+
+        num_class_0 = class_0_locs.shape[0]
+        num_class_1 = class_1_locs.shape[0]
+
+        if num_class_0 > 0:
+            class_0_idx = np.argmax(class_0_scores)
+            locs_.append(class_0_locs[class_0_idx])
+            classes_.append(class_0_classes[class_0_idx])
+            scores_.append(class_0_scores[class_0_idx])
+        if num_class_1 > 0:
+            class_1_idx = np.argmax(class_1_scores)
+            locs_.append(class_1_locs[class_1_idx])
+            classes_.append(class_1_classes[class_1_idx])
+            scores_.append(class_1_scores[class_1_idx])
+
+        locs_ = np.array(locs_)
+        classes_ = np.array(classes_)
+        scores_ = np.array(scores_)
+
+        for i in range(locs_.shape[0]):
+            class_id = int(classes_[i])
+            tly_norm, bry_norm = locs_[i][[0, 2]]
+            tlx_norm, brx_norm = locs_[i][[1, 3]]
+
+            tly, bry = (locs_[i][[0, 2]] * img_h).astype(np.int)
+            tlx, brx = (locs_[i][[1, 3]] * img_w).astype(np.int)
 
             out_locs_tlxy_brxy.append([tlx, tly, brx, bry])
             out_locs_tlxy_brxy_normalized.append([tlx_norm, tly_norm, brx_norm, bry_norm])
             out_class_ids.append(class_id)
             out_class_names.append(labels[class_id])
-            out_scores.append(scores[0][i])
+            out_scores.append(scores_[i])
 
-            if scores[0][i] > conf_thresh[class_id]:
+            if scores_[i] > conf_thresh[class_id]:
                 cv2.rectangle(im, (tlx, tly), (brx, bry), (int(label_colors[class_id][0]),
                                                            int(label_colors[class_id][1]),
                                                            int(label_colors[class_id][2])), 1)
-                cv2.putText(im, str(labels[classes[0][i]]) + ' ' + str(scores[0][i]),
+                cv2.putText(im, str(labels[classes_[i]]) + ' ' + str(scores_[i]),
                             (tlx - 2, tly - 2),
                             cv2.FONT_HERSHEY_SIMPLEX, .5, (int(label_colors[class_id][0]),
                                                            int(label_colors[class_id][1]),
@@ -620,7 +654,7 @@ class RoomNet:
         legit_bboxes_tly_tlx_bry_brx, classes, scores, _ = self.ssd_postprocessing_raw_outs(raw_bboxes, box_priors,
                                                                                             raw_softmax_outs, clip=clip)
         print('------->', legit_bboxes_tly_tlx_bry_brx, scores)
-        selected_indices = tf.image.non_max_suppression(legit_bboxes_tly_tlx_bry_brx[0], scores[0], 3,
+        selected_indices = tf.image.non_max_suppression(legit_bboxes_tly_tlx_bry_brx[0], scores[0], 10,
                                                         iou_threshold=self.nms_iou_threshold,
                                                         score_threshold=self.nms_score_threshold)
         output_locations = tf.expand_dims(tf.gather(legit_bboxes_tly_tlx_bry_brx[0], selected_indices),
@@ -687,6 +721,11 @@ class RoomNet:
         classification_out_softmax = tf.nn.softmax(classification_out, name='classifications_raw')
         return detection_out, classification_out_softmax, classification_out
 
+    def __get_nn_vars_and_ops(self):
+        vars = tf.global_variables()
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        return vars, update_ops
+
     def init_nn_graph(self):
         layer_outs = self.conv_block(self.x_tensor, 8)
         layer_outs = self.conv_block(layer_outs, 32, pool_ksize=4, pool_stride=1, block_depth=3)
@@ -694,7 +733,7 @@ class RoomNet:
         layer_outs = self.conv_block(layer_outs, 128, pooling=False)
         layer_outs = self.conv_block(layer_outs, 16, pool_ksize=4, pool_stride=2, block_depth=3)
         layer_outs = tf.nn.avg_pool(layer_outs, ksize=[1, 2, 2, 1], strides=[1, 1, 1, 1], padding="VALID")
-        stop_grad_vars = tf.global_variables()
+        stop_grad_vars_and_ops = self.__get_nn_vars_and_ops()
         self.ssd_endpoints = [self.layers[4][2], self.layers[4][-1], layer_outs]
 
         v0 = tf.global_variables()
@@ -702,12 +741,12 @@ class RoomNet:
         v1 = tf.global_variables()
         ssdlite_vars = v1[len(v0):]
 
-        trainable_vars = [v for v in tf.trainable_variables() if v not in stop_grad_vars]
+        trainable_vars = [v for v in tf.trainable_variables() if v not in stop_grad_vars_and_ops[0]]
 
-        restore_excluded_vars = ssdlite_vars
+        # restore_excluded_vars = ssdlite_vars
         # restore_excluded_vars = [v for v in tf.global_variables() if 'FullKernel' in v.name]
-        # restore_excluded_vars = []
+        restore_excluded_vars = []
 
         layer_outs = [detection_out, classification_out_softmax, classification_out]
         self.anchor_bboxes = self.gen_anchors()
-        return layer_outs, trainable_vars, stop_grad_vars, restore_excluded_vars
+        return layer_outs, trainable_vars, restore_excluded_vars, stop_grad_vars_and_ops
