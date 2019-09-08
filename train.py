@@ -57,9 +57,9 @@ if __name__ == '__main__':
                  compute_bn_mean_var=COMPUTE_BN_MEAN_VAR, load_training_vars=False,
                  train_batch_size=TRAIN_BATCH_SIZE)
     nn.init()
-    # nn.load('final_model/roomnet')
+    nn.load('final_model/roomnet')
     # nn.load('all_trained_models/roomnet--21900')
-    nn.load('all_trained_models/trained_models_object_detection_3/roomnet--151500')
+    # nn.load('all_trained_models/trained_models_object_detection_3/roomnet--151500')
 
     for train_iter in range(nn.start_step, nn.start_step + TRAIN_STEPS):
         if train_iter % SAVE_FREQ == 0:  # and train_iter > nn.start_step:
