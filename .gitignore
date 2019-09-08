@@ -4,3 +4,5 @@ all_trained_models/
 final_deliverables/
 test_images/
 data/
+rough/
+train_logs/
