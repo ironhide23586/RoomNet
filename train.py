@@ -23,17 +23,17 @@ from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
 
 # DATA_DIR = './data/REI-Dataset-reduced'
-DATA_DIR = './data/REI-Dataset'
+DATA_DIR = './data/Kitchen-Hood'
 
-TRAIN_LIST_FPATH = 'train_list.txt'
-VAL_LIST_FPATH = 'val_list.txt'
-TRAIN_STATS_FILE = 'all_train_stats.json'
+TRAIN_LIST_FPATH = 'train_list-kitchen_hood.txt'
+VAL_LIST_FPATH = 'val_list-kitchen_hood.txt'
+TRAIN_STATS_FILE = 'all_train_stats-kitchen_hood.json'
 IMG_SIDE = 224
 
 TRAIN_BATCH_SIZE = 45
 TRAIN_STEPS = 100000
 SAVE_FREQ = 10
-LEARN_RATE = 2e-4
+LEARN_RATE = 2e-3
 DROPOUT_ENABLED = False
 DROPOUT_RATE = .35
 L2_REGULARIZATION_COEFF = 6e-2
@@ -49,6 +49,19 @@ def remove_invalid_fpaths(fpaths):
         if im is not None:
             legit_fpaths.append(fpaths[i])
     return legit_fpaths
+
+
+def balance_paths(path_mappings):
+    label_names = list(path_mappings.keys())
+    max_class_size = max([len(path_mappings[k]) for k in label_names])
+    for n, v in path_mappings.items():
+        v_new = []
+        class_size = len(v)
+        repetitions = int(np.round(max_class_size / class_size))
+        for _ in range(repetitions):
+            v_new += v
+        path_mappings[n] = v_new
+    return path_mappings
 
 
 def extract_fpaths(data_dir):
@@ -81,14 +94,13 @@ def extract_fpaths(data_dir):
         labels.append(key)
         name_id_mappings[key] = i
     json.dump(name_id_mappings, open('label_mappings.json', 'w'), indent=4, sort_keys=True)
-    smallest_class_id = np.argmin(class_sizes)
-    smallest_class_size = class_sizes[smallest_class_id]
+    path_mappings = balance_paths(path_mappings)
     train_path_mappings = {}
     val_path_mappings = {}
-    train_class_size = int(.9 * smallest_class_size)
     for i in range(len(class_dirs)):
         paths = path_mappings[labels[i]].copy()
         np.random.shuffle(paths)
+        train_class_size = int(.9 * len(paths))
         train_paths = paths[:train_class_size]
         val_paths = paths[train_class_size:]
         train_path_mappings[labels[i]] = train_paths
@@ -119,19 +131,19 @@ if __name__ == '__main__':
     val_data_reader = TrainFeeder(val_fpaths, batch_size=64, batches_per_queue=10, shuffle=False,
                                   im_side=IMG_SIDE, random_crop=False, preprocess=False)
 
-    nn = RoomNet(num_classes=6, im_side=IMG_SIDE, num_steps=TRAIN_STEPS, learn_rate=LEARN_RATE,
+    nn = RoomNet(num_classes=2, im_side=IMG_SIDE, num_steps=TRAIN_STEPS, learn_rate=LEARN_RATE,
                  dropout_rate=DROPOUT_RATE, l2_regularizer_coeff=L2_REGULARIZATION_COEFF,
                  dropout_enabled=DROPOUT_ENABLED, update_batchnorm_means_vars=UPDATE_BATCHNORM_MOVING_VARS,
                  compute_bn_mean_var=COMPUTE_BN_MEAN_VAR)
     nn.init()
-    nn.load('final_model/roomnet')
-    # nn.load()
+    # nn.load('final_model/roomnet')
+    nn.load()
     if os.path.isfile(TRAIN_STATS_FILE):
         all_train_stats = json.load(open(TRAIN_STATS_FILE, 'r'))
     else:
         all_train_stats = []
     for train_iter in range(nn.start_step, nn.start_step + TRAIN_STEPS):
-        if train_iter % SAVE_FREQ == 0 and train_iter > nn.start_step:
+        if train_iter % SAVE_FREQ == 0: # and train_iter > nn.start_step:
             x_val, y_val = val_data_reader.dequeue()
             y_vals = list(y_val)
             y_preds = []
@@ -150,6 +162,7 @@ if __name__ == '__main__':
                            'precisions': list(map(float, list(prec))),
                            'recalls': list(map(float, list(rec))),
                            'f-scores': list(map(float, list(fsc)))}
+            print(train_stats)
             all_train_stats.append(train_stats)
             print('Dumping train stats to', TRAIN_STATS_FILE)
             json.dump(all_train_stats, open(TRAIN_STATS_FILE, 'w'), indent=4, sort_keys=True)

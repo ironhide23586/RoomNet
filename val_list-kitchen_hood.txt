@@ -1,0 +1,249 @@
+./data/Kitchen-Hood\Under-cabinet\1-8834.jpg 1
+./data/Kitchen-Hood\Chimney\2-3981.jpg 0
+./data/Kitchen-Hood\Under-cabinet\1-8595.jpg 1
+./data/Kitchen-Hood\Under-cabinet\5-7753.jpg 1
+./data/Kitchen-Hood\Under-cabinet\6-7370.jpg 1
+./data/Kitchen-Hood\Chimney\3-1358.jpg 0
+./data/Kitchen-Hood\Under-cabinet\4-2097.jpg 1
+./data/Kitchen-Hood\Chimney\5-4030.jpg 0
+./data/Kitchen-Hood\Chimney\4-9427.jpg 0
+./data/Kitchen-Hood\Chimney\7-9948.jpg 0
+./data/Kitchen-Hood\Under-cabinet\0-4177.jpg 1
+./data/Kitchen-Hood\Under-cabinet\8-1417-15568.jpg 1
+./data/Kitchen-Hood\Under-cabinet\17-8238.jpg 1
+./data/Kitchen-Hood\Chimney\9-10107.jpg 0
+./data/Kitchen-Hood\Under-cabinet\kitchen (114).jpeg 1
+./data/Kitchen-Hood\Chimney\4-10344.jpg 0
+./data/Kitchen-Hood\Chimney\3-1367.jpg 0
+./data/Kitchen-Hood\Under-cabinet\2-7223.jpg 1
+./data/Kitchen-Hood\Under-cabinet\kitchen (144).jpeg 1
+./data/Kitchen-Hood\Chimney\2-5592.jpg 0
+./data/Kitchen-Hood\Under-cabinet\kitchen (204).jpg 1
+./data/Kitchen-Hood\Chimney\0-4029.jpg 0
+./data/Kitchen-Hood\Chimney\5-4663.jpg 0
+./data/Kitchen-Hood\Under-cabinet\5-7664.jpg 1
+./data/Kitchen-Hood\Chimney\3-9426.jpg 0
+./data/Kitchen-Hood\Chimney\2-3981.jpg 0
+./data/Kitchen-Hood\Chimney\6-11149.jpg 0
+./data/Kitchen-Hood\Chimney\kitchen (113).jpeg 0
+./data/Kitchen-Hood\Chimney\1-1784.jpg 0
+./data/Kitchen-Hood\Chimney\7-9948.jpg 0
+./data/Kitchen-Hood\Chimney\3-4191.jpg 0
+./data/Kitchen-Hood\Under-cabinet\kitchen (315).jpg 1
+./data/Kitchen-Hood\Under-cabinet\4-8692.jpg 1
+./data/Kitchen-Hood\Under-cabinet\kitchen (105).jpeg 1
+./data/Kitchen-Hood\Under-cabinet\0-1085-15407.jpg 1
+./data/Kitchen-Hood\Under-cabinet\kitchen (174).jpg 1
+./data/Kitchen-Hood\Chimney\5-3007.jpg 0
+./data/Kitchen-Hood\Chimney\1-3223.jpg 0
+./data/Kitchen-Hood\Under-cabinet\2-9525.jpg 1
+./data/Kitchen-Hood\Chimney\0-4152.jpg 0
+./data/Kitchen-Hood\Under-cabinet\kitchen (167).jpg 1
+./data/Kitchen-Hood\Chimney\2-7110.jpg 0
+./data/Kitchen-Hood\Chimney\3-11479.jpg 0
+./data/Kitchen-Hood\Chimney\0-10428.jpg 0
+./data/Kitchen-Hood\Chimney\0-5488.jpg 0
+./data/Kitchen-Hood\Chimney\9-10107.jpg 0
+./data/Kitchen-Hood\Chimney\3-11479.jpg 0
+./data/Kitchen-Hood\Chimney\3-1358.jpg 0
+./data/Kitchen-Hood\Under-cabinet\kitchen (252).jpg 1
+./data/Kitchen-Hood\Chimney\8-11426.jpg 0
+./data/Kitchen-Hood\Under-cabinet\6-2678.jpg 1
+./data/Kitchen-Hood\Chimney\0-3980.jpg 0
+./data/Kitchen-Hood\Under-cabinet\4-6694.jpg 1
+./data/Kitchen-Hood\Chimney\1-1784.jpg 0
+./data/Kitchen-Hood\Chimney\0-4152.jpg 0
+./data/Kitchen-Hood\Chimney\3-1358.jpg 0
+./data/Kitchen-Hood\Under-cabinet\kitchen (309).jpg 1
+./data/Kitchen-Hood\Under-cabinet\4-82.jpg 1
+./data/Kitchen-Hood\Under-cabinet\8-1043.jpg 1
+./data/Kitchen-Hood\Chimney\2-5592.jpg 0
+./data/Kitchen-Hood\Under-cabinet\4-11857.jpg 1
+./data/Kitchen-Hood\Under-cabinet\2-13099.jpg 1
+./data/Kitchen-Hood\Under-cabinet\8-9763.jpg 1
+./data/Kitchen-Hood\Chimney\9658920303.jpg 0
+./data/Kitchen-Hood\Under-cabinet\3-6971.jpg 1
+./data/Kitchen-Hood\Under-cabinet\5-556-15533.jpg 1
+./data/Kitchen-Hood\Chimney\2-505.jpg 0
+./data/Kitchen-Hood\Under-cabinet\kitchen (112).jpg 1
+./data/Kitchen-Hood\Under-cabinet\kitchen (132).jpeg 1
+./data/Kitchen-Hood\Chimney\kitchen (113).jpeg 0
+./data/Kitchen-Hood\Under-cabinet\9-9306.jpg 1
+./data/Kitchen-Hood\Under-cabinet\kitchen (117).jpeg 1
+./data/Kitchen-Hood\Under-cabinet\8-5542.jpg 1
+./data/Kitchen-Hood\Chimney\5-4000.jpg 0
+./data/Kitchen-Hood\Chimney\4-12784.jpg 0
+./data/Kitchen-Hood\Under-cabinet\7-10264.jpg 1
+./data/Kitchen-Hood\Chimney\1-3745.jpg 0
+./data/Kitchen-Hood\Under-cabinet\2-3955.jpg 1
+./data/Kitchen-Hood\Under-cabinet\kitchen (165).jpeg 1
+./data/Kitchen-Hood\Chimney\2-7110.jpg 0
+./data/Kitchen-Hood\Chimney\3-1367.jpg 0
+./data/Kitchen-Hood\Under-cabinet\10-8851.jpg 1
+./data/Kitchen-Hood\Under-cabinet\0-5987.jpg 1
+./data/Kitchen-Hood\Under-cabinet\3-9543.jpg 1
+./data/Kitchen-Hood\Under-cabinet\14-1204.jpg 1
+./data/Kitchen-Hood\Chimney\6-9974.jpg 0
+./data/Kitchen-Hood\Chimney\kitchen (143).jpeg 0
+./data/Kitchen-Hood\Chimney\3-8349.jpg 0
+./data/Kitchen-Hood\Chimney\5-10983.jpg 0
+./data/Kitchen-Hood\Under-cabinet\kitchen (215).jpg 1
+./data/Kitchen-Hood\Under-cabinet\kitchen (119).jpg 1
+./data/Kitchen-Hood\Under-cabinet\5-2416.jpg 1
+./data/Kitchen-Hood\Chimney\2-5592.jpg 0
+./data/Kitchen-Hood\Chimney\8-9787.jpg 0
+./data/Kitchen-Hood\Chimney\5-3007.jpg 0
+./data/Kitchen-Hood\Under-cabinet\5-7799.jpg 1
+./data/Kitchen-Hood\Under-cabinet\2-4442.jpg 1
+./data/Kitchen-Hood\Chimney\2-3981.jpg 0
+./data/Kitchen-Hood\Chimney\5-8382.jpg 0
+./data/Kitchen-Hood\Under-cabinet\1-37-15434.jpg 1
+./data/Kitchen-Hood\Chimney\9658920303.jpg 0
+./data/Kitchen-Hood\Chimney\4-4155.jpg 0
+./data/Kitchen-Hood\Under-cabinet\6-8738.jpg 1
+./data/Kitchen-Hood\Under-cabinet\5-7765.jpg 1
+./data/Kitchen-Hood\Chimney\1-12457.jpg 0
+./data/Kitchen-Hood\Under-cabinet\5-8297.jpg 1
+./data/Kitchen-Hood\Under-cabinet\kitchen (35).jpeg 1
+./data/Kitchen-Hood\Chimney\9-6256.jpg 0
+./data/Kitchen-Hood\Chimney\1-12457.jpg 0
+./data/Kitchen-Hood\Under-cabinet\2-3602.jpg 1
+./data/Kitchen-Hood\Chimney\3-6405.jpg 0
+./data/Kitchen-Hood\Chimney\4-4155.jpg 0
+./data/Kitchen-Hood\Chimney\1-1784.jpg 0
+./data/Kitchen-Hood\Chimney\2-12838.jpg 0
+./data/Kitchen-Hood\Chimney\2-3040.jpg 0
+./data/Kitchen-Hood\Chimney\2-5489.jpg 0
+./data/Kitchen-Hood\Under-cabinet\kitchen (413).jpg 1
+./data/Kitchen-Hood\Chimney\3-773.jpg 0
+./data/Kitchen-Hood\Under-cabinet\6-5894.jpg 1
+./data/Kitchen-Hood\Chimney\1-4049.jpg 0
+./data/Kitchen-Hood\Chimney\4-12784.jpg 0
+./data/Kitchen-Hood\Under-cabinet\1-7941.jpg 1
+./data/Kitchen-Hood\Chimney\3-1358.jpg 0
+./data/Kitchen-Hood\Under-cabinet\1-274-15432.jpg 1
+./data/Kitchen-Hood\Under-cabinet\9-7117.jpg 1
+./data/Kitchen-Hood\Chimney\1-3223.jpg 0
+./data/Kitchen-Hood\Under-cabinet\kitchen (285).jpg 1
+./data/Kitchen-Hood\Under-cabinet\4-8559.jpg 1
+./data/Kitchen-Hood\Under-cabinet\kitchen (354).jpg 1
+./data/Kitchen-Hood\Chimney\1-1784.jpg 0
+./data/Kitchen-Hood\Chimney\0-4152.jpg 0
+./data/Kitchen-Hood\Under-cabinet\3-11512.jpg 1
+./data/Kitchen-Hood\Under-cabinet\4-1617.jpg 1
+./data/Kitchen-Hood\Under-cabinet\8-9125.jpg 1
+./data/Kitchen-Hood\Under-cabinet\5-11037.jpg 1
+./data/Kitchen-Hood\Chimney\2-3040.jpg 0
+./data/Kitchen-Hood\Under-cabinet\1-7667.jpg 1
+./data/Kitchen-Hood\Chimney\3-6405.jpg 0
+./data/Kitchen-Hood\Chimney\0-4029.jpg 0
+./data/Kitchen-Hood\Under-cabinet\kitchen (148).jpeg 1
+./data/Kitchen-Hood\Chimney\5-4030.jpg 0
+./data/Kitchen-Hood\Chimney\1-10395.jpg 0
+./data/Kitchen-Hood\Under-cabinet\6-11949.jpg 1
+./data/Kitchen-Hood\Chimney\1-3490.jpg 0
+./data/Kitchen-Hood\Chimney\5-4000.jpg 0
+./data/Kitchen-Hood\Under-cabinet\1-9576.jpg 1
+./data/Kitchen-Hood\Chimney\5-8382.jpg 0
+./data/Kitchen-Hood\Chimney\0-3891.jpg 0
+./data/Kitchen-Hood\Under-cabinet\3-1919.jpg 1
+./data/Kitchen-Hood\Chimney\1-10395.jpg 0
+./data/Kitchen-Hood\Chimney\1-1784.jpg 0
+./data/Kitchen-Hood\Chimney\7-9948.jpg 0
+./data/Kitchen-Hood\Under-cabinet\kitchen (166).jpg 1
+./data/Kitchen-Hood\Chimney\0-10428.jpg 0
+./data/Kitchen-Hood\Under-cabinet\3-9222.jpg 1
+./data/Kitchen-Hood\Under-cabinet\0-10964.jpg 1
+./data/Kitchen-Hood\Under-cabinet\kitchen (164).jpg 1
+./data/Kitchen-Hood\Under-cabinet\4-8988.jpg 1
+./data/Kitchen-Hood\Under-cabinet\kitchen (248).jpg 1
+./data/Kitchen-Hood\Chimney\0-4281.jpg 0
+./data/Kitchen-Hood\Chimney\4-12568.jpg 0
+./data/Kitchen-Hood\Under-cabinet\kitchen (343).jpg 1
+./data/Kitchen-Hood\Under-cabinet\8-881.jpg 1
+./data/Kitchen-Hood\Under-cabinet\1-7693.jpg 1
+./data/Kitchen-Hood\Chimney\2-8348.jpg 0
+./data/Kitchen-Hood\Chimney\2-5592.jpg 0
+./data/Kitchen-Hood\Under-cabinet\kitchen (189).jpg 1
+./data/Kitchen-Hood\Under-cabinet\kitchen (406).jpg 1
+./data/Kitchen-Hood\Chimney\1-9174.jpg 0
+./data/Kitchen-Hood\Under-cabinet\kitchen (195).jpeg 1
+./data/Kitchen-Hood\Chimney\3-8349.jpg 0
+./data/Kitchen-Hood\Under-cabinet\kitchen (133).jpeg 1
+./data/Kitchen-Hood\Under-cabinet\kitchen (18).jpeg 1
+./data/Kitchen-Hood\Under-cabinet\4-10491.jpg 1
+./data/Kitchen-Hood\Chimney\4-12784.jpg 0
+./data/Kitchen-Hood\Under-cabinet\kitchen (145).jpeg 1
+./data/Kitchen-Hood\Under-cabinet\5-1063-15511.jpg 1
+./data/Kitchen-Hood\Under-cabinet\1-7207.jpg 1
+./data/Kitchen-Hood\Under-cabinet\8-1789.jpg 1
+./data/Kitchen-Hood\Under-cabinet\kitchen (393).jpg 1
+./data/Kitchen-Hood\Under-cabinet\kitchen (407).jpg 1
+./data/Kitchen-Hood\Under-cabinet\4-9223.jpg 1
+./data/Kitchen-Hood\Under-cabinet\2-4082.jpg 1
+./data/Kitchen-Hood\Chimney\4-9427.jpg 0
+./data/Kitchen-Hood\Chimney\5-3007.jpg 0
+./data/Kitchen-Hood\Chimney\7-1248.jpg 0
+./data/Kitchen-Hood\Under-cabinet\2-1983.jpg 1
+./data/Kitchen-Hood\Under-cabinet\5-1134.jpg 1
+./data/Kitchen-Hood\Chimney\1-13318.jpg 0
+./data/Kitchen-Hood\Under-cabinet\kitchen (381).jpg 1
+./data/Kitchen-Hood\Chimney\7-9948.jpg 0
+./data/Kitchen-Hood\Chimney\2-7110.jpg 0
+./data/Kitchen-Hood\Chimney\3-8349.jpg 0
+./data/Kitchen-Hood\Under-cabinet\2-9252.jpg 1
+./data/Kitchen-Hood\Chimney\5-3007.jpg 0
+./data/Kitchen-Hood\Chimney\4-10344.jpg 0
+./data/Kitchen-Hood\Under-cabinet\0-1878.jpg 1
+./data/Kitchen-Hood\Under-cabinet\5-4111.jpg 1
+./data/Kitchen-Hood\Under-cabinet\7-7273.jpg 1
+./data/Kitchen-Hood\Under-cabinet\1-10963.jpg 1
+./data/Kitchen-Hood\Chimney\4-12784.jpg 0
+./data/Kitchen-Hood\Chimney\3-1358.jpg 0
+./data/Kitchen-Hood\Chimney\1-3745.jpg 0
+./data/Kitchen-Hood\Chimney\1-9174.jpg 0
+./data/Kitchen-Hood\Under-cabinet\4-2624.jpg 1
+./data/Kitchen-Hood\Chimney\3-4191.jpg 0
+./data/Kitchen-Hood\Under-cabinet\kitchen (126).jpeg 1
+./data/Kitchen-Hood\Chimney\3-8349.jpg 0
+./data/Kitchen-Hood\Under-cabinet\2-2926.jpg 1
+./data/Kitchen-Hood\Under-cabinet\1-1018.jpg 1
+./data/Kitchen-Hood\Under-cabinet\2-4653.jpg 1
+./data/Kitchen-Hood\Under-cabinet\7-1849.jpg 1
+./data/Kitchen-Hood\Chimney\3-773.jpg 0
+./data/Kitchen-Hood\Chimney\3-9549.jpg 0
+./data/Kitchen-Hood\Under-cabinet\5-12436.jpg 1
+./data/Kitchen-Hood\Chimney\5-4663.jpg 0
+./data/Kitchen-Hood\Chimney\2-8348.jpg 0
+./data/Kitchen-Hood\Chimney\1-12457.jpg 0
+./data/Kitchen-Hood\Under-cabinet\15-3833.jpg 1
+./data/Kitchen-Hood\Chimney\6-11149.jpg 0
+./data/Kitchen-Hood\Under-cabinet\15-7945.jpg 1
+./data/Kitchen-Hood\Chimney\6-11149.jpg 0
+./data/Kitchen-Hood\Under-cabinet\1-9375.jpg 1
+./data/Kitchen-Hood\Chimney\1-3490.jpg 0
+./data/Kitchen-Hood\Under-cabinet\kitchen (298).jpg 1
+./data/Kitchen-Hood\Chimney\2-505.jpg 0
+./data/Kitchen-Hood\Under-cabinet\5-6137.jpg 1
+./data/Kitchen-Hood\Chimney\0-3891.jpg 0
+./data/Kitchen-Hood\Chimney\2-8348.jpg 0
+./data/Kitchen-Hood\Chimney\8-9787.jpg 0
+./data/Kitchen-Hood\Chimney\9-6256.jpg 0
+./data/Kitchen-Hood\Under-cabinet\6-8393.jpg 1
+./data/Kitchen-Hood\Under-cabinet\kitchen (32).jpg 1
+./data/Kitchen-Hood\Chimney\2-8348.jpg 0
+./data/Kitchen-Hood\Chimney\3-11479.jpg 0
+./data/Kitchen-Hood\Under-cabinet\kitchen (118).jpg 1
+./data/Kitchen-Hood\Chimney\9-6256.jpg 0
+./data/Kitchen-Hood\Under-cabinet\1-6947.jpg 1
+./data/Kitchen-Hood\Chimney\7-9948.jpg 0
+./data/Kitchen-Hood\Chimney\kitchen (113).jpeg 0
+./data/Kitchen-Hood\Chimney\5-3007.jpg 0
+./data/Kitchen-Hood\Chimney\7-9948.jpg 0
+./data/Kitchen-Hood\Chimney\1-6403.jpg 0
+./data/Kitchen-Hood\Under-cabinet\1-9418.jpg 1
+./data/Kitchen-Hood\Under-cabinet\0-4080.jpg 1
+./data/Kitchen-Hood\Chimney\6-9974.jpg 0
+./data/Kitchen-Hood\Under-cabinet\2-10486.jpg 1
+./data/Kitchen-Hood\Under-cabinet\kitchen (314).jpg 1
+./data/Kitchen-Hood\Under-cabinet\5-3070.jpg 1

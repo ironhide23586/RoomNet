@@ -20,7 +20,7 @@ class RoomNet:
 
     def __init__(self, num_classes, im_side=600, compute_bn_mean_var=True, start_step=0, dropout_enabled=False,
                  learn_rate=1e-4, l2_regularizer_coeff=1e-2, num_steps=10000, dropout_rate=.2,
-                 update_batchnorm_means_vars=True, optimized_inference=False):
+                 update_batchnorm_means_vars=True, optimized_inference=False, load_training_vars=False):
         self.num_classes = num_classes
         self.im_side = im_side
         self.compute_bn_mean_var = compute_bn_mean_var
@@ -52,7 +52,10 @@ class RoomNet:
         if self.dropout_enabled:
             self.dropout_rate = dropout_rate
             self.dropout_rate_tensor = tf.placeholder(tf.float32, shape=())
-        self.out_op, self.trainable_vars, self.stop_grad_vars, self.restore_excluded_vars = self.init_nn_graph()
+        self.out_op, self.trainable_vars, self.restore_excluded_vars, stop_grad_vars_and_ops = self.init_nn_graph()
+
+        self.stop_grad_vars, self.stop_grad_update_ops = stop_grad_vars_and_ops
+
         self.loss_op = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.y_tensor,
                                                                       logits=self.out_op)
         l2_losses = [self.l2_regularizer_coeff * tf.nn.l2_loss(v) for v in self.trainable_vars]
@@ -62,7 +65,8 @@ class RoomNet:
         grads = tf.gradients(self.reduced_loss, self.trainable_vars, stop_gradients=self.stop_grad_vars)
 
         if update_batchnorm_means_vars:
-            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            update_ops_all = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            update_ops = [op for op in update_ops_all if op not in self.stop_grad_update_ops]
             with tf.control_dependencies(update_ops):
                 self.train_op = self.opt.apply_gradients(zip(grads, self.trainable_vars), global_step=self.step_ph)
         else:
@@ -71,8 +75,10 @@ class RoomNet:
         self.outs_softmax_op = tf.nn.softmax(self.out_op)
         self.outs_final = tf.argmax(self.outs_softmax_op, axis=-1)
 
-        # self.restore_excluded_vars = []
-        self.restore_excluded_vars += [v for v in tf.all_variables() if 'Adam' in v.name or 'power' in v.name]
+        if not load_training_vars:
+            self.restore_excluded_vars += [v for v in tf.all_variables() if 'Adam' in v.name or 'power' in v.name]
+        else:
+            self.restore_excluded_vars += []
 
         self.vars_to_keep = [v for v in tf.global_variables() if v not in self.unsaved_vars]
         self.vars_to_restore = [v for v in self.vars_to_keep if v not in self.restore_excluded_vars]
@@ -86,7 +92,9 @@ class RoomNet:
 
     def init(self):
         if not self.sess:
-            self.sess = tf.Session()
+            config = tf.ConfigProto()
+            config.gpu_options.allow_growth = True
+            self.sess = tf.Session(config=config)
             init = tf.global_variables_initializer()
             self.sess.run(init)
 
@@ -171,7 +179,10 @@ class RoomNet:
 
     def conv_block(self, x_in, output_filters, kernel_size=3, kernel_stride=1, dilation=1, padding="VALID",
                    batch_norm=True, activation=tf.nn.relu6, pooling=True, pool_ksize=3, pool_stride=1,
-                   pool_padding="VALID", pooling_fn=tf.nn.avg_pool, block_depth=1, make_residual=True):
+                   pool_padding="VALID", pooling_fn=tf.nn.avg_pool, block_depth=1, make_residual=True,
+                   compute_bn_mean_var=None):
+        if compute_bn_mean_var is None:
+            compute_bn_mean_var = self.compute_bn_mean_var
         if not batch_norm:
             use_bias = True
         else:
@@ -190,7 +201,7 @@ class RoomNet:
                                        strides=[1, pool_stride, pool_stride, 1], padding=pool_padding)
                 curr_layer.append(layer_out)
             if batch_norm:
-                layer_out = tf.layers.batch_normalization(layer_out, training=self.compute_bn_mean_var)
+                layer_out = tf.layers.batch_normalization(layer_out, training=compute_bn_mean_var)
                 curr_layer.append(layer_out)
             if depth == 0:
                 residual_input = layer_out
@@ -199,7 +210,7 @@ class RoomNet:
             output = output + tf.image.resize_bilinear(residual_input, output.shape[1:3])
             curr_layer.append(output)
             if batch_norm:
-                output = tf.layers.batch_normalization(output, training=self.compute_bn_mean_var)
+                output = tf.layers.batch_normalization(output, training=compute_bn_mean_var)
                 curr_layer.append(output)
         if self.dropout_enabled:
             output = tf.nn.dropout(output, rate=self.dropout_rate_tensor)
@@ -222,23 +233,35 @@ class RoomNet:
         self.layers.append(curr_layer)
         return layer_outs
 
+    def __get_nn_vars_and_ops(self):
+        vars = tf.global_variables()
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        return vars, update_ops
+
     def init_nn_graph(self):
-        layer_outs = self.conv_block(self.x_tensor, 8)
-        layer_outs = self.conv_block(layer_outs, 32, pool_ksize=4, pool_stride=1, block_depth=3)
-        layer_outs = self.conv_block(layer_outs, 64, pool_ksize=4, pool_stride=2, block_depth=2)
-        layer_outs = self.conv_block(layer_outs, 128, pooling=False)
-        layer_outs = self.conv_block(layer_outs, 16, pool_ksize=4, pool_stride=2, block_depth=3)
+        feature_extractor_bn_mean_var_compute = False
+        layer_outs = self.conv_block(self.x_tensor, 8, compute_bn_mean_var=feature_extractor_bn_mean_var_compute)
+        layer_outs = self.conv_block(layer_outs, 32, pool_ksize=4, pool_stride=1, block_depth=3,
+                                     compute_bn_mean_var=feature_extractor_bn_mean_var_compute)
+        layer_outs = self.conv_block(layer_outs, 64, pool_ksize=4, pool_stride=2, block_depth=2,
+                                     compute_bn_mean_var=feature_extractor_bn_mean_var_compute)
+        layer_outs = self.conv_block(layer_outs, 128, pooling=False,
+                                     compute_bn_mean_var=feature_extractor_bn_mean_var_compute)
+        layer_outs = self.conv_block(layer_outs, 16, pool_ksize=4, pool_stride=2, block_depth=3,
+                                     compute_bn_mean_var=feature_extractor_bn_mean_var_compute)
+        stop_grad_vars_and_ops = self.__get_nn_vars_and_ops()
         shp = layer_outs.shape
         flat_len = shp[1] * shp[2] * shp[3]
+
         v0 = tf.all_variables()
         layer_outs = self.dense_block(tf.reshape(layer_outs, [-1, flat_len]), 32)
         layer_outs = self.dense_block(layer_outs, 16)
         layer_outs = self.dense_block(layer_outs, 8)
         layer_outs = self.dense_block(layer_outs, self.num_classes, batch_norm=False, biased=True)
         v1 = tf.all_variables()
-        trainable_vars = tf.trainable_variables()
-        original_vars = []
-
         # restore_excluded_vars = [v for v in v1 if v not in v0]
         restore_excluded_vars = []
-        return layer_outs, trainable_vars, original_vars, restore_excluded_vars
+
+        trainable_vars = [v for v in tf.trainable_variables() if v not in stop_grad_vars_and_ops[0]]
+
+        return layer_outs, trainable_vars, restore_excluded_vars, stop_grad_vars_and_ops

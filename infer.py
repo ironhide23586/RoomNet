@@ -19,10 +19,10 @@ import xlwt
 from network import RoomNet
 
 
-CLASS_LABELS = ['Backyard', 'Bathroom', 'Bedroom', 'Frontyard', 'Kitchen', 'LivingRoom']
+CLASS_LABELS = ['Chimney', 'Under-cabinet']
 
-INPUT_MODEL_PATH = './final_model/roomnet'
-INPUT_IMAGES_DIR = './test_images/set2/images'
+INPUT_MODEL_PATH = './all_trained_models/trained_models/roomnet--0.734375--940'
+INPUT_IMAGES_DIR = './test_images/set3/images'
 IMG_SIDE = 224
 
 # INPUT_IMG_PATH_LIST_FILE = 'val_list.txt'
