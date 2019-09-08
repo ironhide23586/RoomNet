@@ -29,12 +29,12 @@ IMG_SIDE = 224
 TRAIN_BATCH_SIZE = 8
 TRAIN_STEPS = 100000
 SAVE_FREQ = 150
-LEARN_RATE = 2e-4
+LEARN_RATE = 7e-5
 DROPOUT_ENABLED = False
 DROPOUT_RATE = .35
 L2_REGULARIZATION_COEFF = 5e-2
-UPDATE_BATCHNORM_MOVING_VARS = True
-COMPUTE_BN_MEAN_VAR = True
+UPDATE_BATCHNORM_MOVING_VARS = False
+COMPUTE_BN_MEAN_VAR = False
 
 
 def wait():
@@ -60,25 +60,6 @@ if __name__ == '__main__':
     # nn.load('final_model/roomnet')
     # nn.load('all_trained_models/roomnet--21900')
     nn.load()
-
-    # d = {}
-    # for v in nn.stop_grad_vars:
-    #     d[v.name] = v.eval(nn.sess)
-    # import pickle
-    # pickle.dump(d, open('fe_vars.pkl', 'wb'))
-
-    # import pickle
-    # import tensorflow as tf
-    # d = pickle.load(open('fe_vars.pkl', 'rb'))
-    # assign_ops = []
-    # varmap = {v.name: v for v in nn.stop_grad_vars}
-    # vnames = list(d.keys())
-    # for k in vnames:
-    #     if 'train_step' in k:
-    #         continue
-    #     op = tf.assign(varmap[k], d[k])
-    #     assign_ops.append(op)
-    # nn.sess.run(assign_ops)
 
     for train_iter in range(nn.start_step, nn.start_step + TRAIN_STEPS):
         if train_iter % SAVE_FREQ == 0:  # and train_iter > nn.start_step:

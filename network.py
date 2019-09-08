@@ -288,14 +288,16 @@ class RoomNet:
                                                               preds_per_img, box_priors,
                                                               iou_thresh=iou_thresh, alpha=alpha,
                                                               logits=logits)
-            curr_img_loss = tf.cond(num_gt > 0, curr_img_loss_fn, lambda: 0.)  # TODO: Dim mislaigned -SB 30/08/2019
+            curr_img_loss = tf.cond(num_gt > 0, curr_img_loss_fn, lambda: 0.)
             batch_losses.append(curr_img_loss)
         curr_loss = tf.reduce_mean(batch_losses)
         return curr_loss
 
     def init(self):
         if not self.sess:
-            self.sess = tf.Session()
+            config = tf.ConfigProto()
+            config.gpu_options.allow_growth = True
+            self.sess = tf.Session(config=config)
             init = tf.global_variables_initializer()
             self.sess.run(init)
 
@@ -334,7 +336,7 @@ class RoomNet:
             self.sess.run(step_assign_op)
         print('Model restored from', model_path)
 
-    def out_postprocess(self, im_in, locs, classes, scores, labels=['Bathtub', 'Shower'], conf_thresh=[.9985, .9975]):
+    def out_postprocess(self, im_in, locs, classes, scores, labels=['Bathtub', 'Shower'], conf_thresh=[.998, .998]):
         im = im_in.astype(np.uint8)
         out_locs_tlxy_brxy = []
         out_locs_tlxy_brxy_normalized = []
@@ -413,6 +415,8 @@ class RoomNet:
         if self.dropout_enabled:
             inferences_raw = self.sess.run(self.outs_final, feed_dict={self.x_tensor: im,
                                                                        self.dropout_rate_tensor: 0.})
+            # tmp = self.sess.run([self.detection_out, self.classification_out_softmax, self.classification_out],
+            #                     feed_dict={self.x_tensor: im, self.dropout_rate_tensor: 0.})
         else:
             inferences_raw = self.sess.run(self.outs_final, feed_dict={self.x_tensor: im})
             # tmp = self.sess.run([self.detection_out, self.classification_out_softmax, self.classification_out],
@@ -476,7 +480,10 @@ class RoomNet:
 
     def conv_block(self, x_in, output_filters, kernel_size=3, kernel_stride=1, dilation=1, padding="VALID",
                    batch_norm=True, activation=tf.nn.relu6, pooling=True, pool_ksize=3, pool_stride=1,
-                   pool_padding="VALID", pooling_fn=tf.nn.avg_pool, block_depth=1, make_residual=True):
+                   pool_padding="VALID", pooling_fn=tf.nn.avg_pool, block_depth=1, make_residual=True,
+                   compute_bn_mean_var=None):
+        if compute_bn_mean_var is None:
+            compute_bn_mean_var = self.compute_bn_mean_var
         if not batch_norm:
             use_bias = True
         else:
@@ -502,7 +509,7 @@ class RoomNet:
                 curr_layer.append(layer_out)
             if batch_norm:
                 v0 = tf.global_variables()
-                layer_out = tf.layers.batch_normalization(layer_out, training=self.compute_bn_mean_var)
+                layer_out = tf.layers.batch_normalization(layer_out, training=compute_bn_mean_var)
                 v1 = tf.global_variables()
                 layer_vars = v1[len(v0):]
                 layer_var_mapping = {layer_out.name: layer_vars}
@@ -516,7 +523,7 @@ class RoomNet:
             curr_layer.append(output)
             if batch_norm:
                 v0 = tf.global_variables()
-                output = tf.layers.batch_normalization(output, training=self.compute_bn_mean_var)
+                output = tf.layers.batch_normalization(output, training=compute_bn_mean_var)
                 v1 = tf.global_variables()
                 layer_vars = v1[len(v0):]
                 layer_var_mapping = {output.name: layer_vars}
@@ -727,11 +734,16 @@ class RoomNet:
         return vars, update_ops
 
     def init_nn_graph(self):
-        layer_outs = self.conv_block(self.x_tensor, 8)
-        layer_outs = self.conv_block(layer_outs, 32, pool_ksize=4, pool_stride=1, block_depth=3)
-        layer_outs = self.conv_block(layer_outs, 64, pool_ksize=4, pool_stride=2, block_depth=2)
-        layer_outs = self.conv_block(layer_outs, 128, pooling=False)
-        layer_outs = self.conv_block(layer_outs, 16, pool_ksize=4, pool_stride=2, block_depth=3)
+        feature_extractor_bn_mean_var_compute = False
+        layer_outs = self.conv_block(self.x_tensor, 8, compute_bn_mean_var=feature_extractor_bn_mean_var_compute)
+        layer_outs = self.conv_block(layer_outs, 32, pool_ksize=4, pool_stride=1, block_depth=3,
+                                     compute_bn_mean_var=feature_extractor_bn_mean_var_compute)
+        layer_outs = self.conv_block(layer_outs, 64, pool_ksize=4, pool_stride=2, block_depth=2,
+                                     compute_bn_mean_var=feature_extractor_bn_mean_var_compute)
+        layer_outs = self.conv_block(layer_outs, 128, pooling=False,
+                                     compute_bn_mean_var=feature_extractor_bn_mean_var_compute)
+        layer_outs = self.conv_block(layer_outs, 16, pool_ksize=4, pool_stride=2, block_depth=3,
+                                     compute_bn_mean_var=feature_extractor_bn_mean_var_compute)
         layer_outs = tf.nn.avg_pool(layer_outs, ksize=[1, 2, 2, 1], strides=[1, 1, 1, 1], padding="VALID")
         stop_grad_vars_and_ops = self.__get_nn_vars_and_ops()
         self.ssd_endpoints = [self.layers[4][2], self.layers[4][-1], layer_outs]
