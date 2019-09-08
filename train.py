@@ -59,7 +59,7 @@ if __name__ == '__main__':
     nn.init()
     # nn.load('final_model/roomnet')
     # nn.load('all_trained_models/roomnet--21900')
-    nn.load()
+    nn.load('all_trained_models/trained_models_object_detection_3/roomnet--151500')
 
     for train_iter in range(nn.start_step, nn.start_step + TRAIN_STEPS):
         if train_iter % SAVE_FREQ == 0:  # and train_iter > nn.start_step:
