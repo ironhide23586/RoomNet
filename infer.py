@@ -21,7 +21,7 @@ from network import RoomNet
 
 CLASS_LABELS = ['Chimney', 'Under-cabinet']
 
-INPUT_MODEL_PATH = './all_trained_models/trained_models/roomnet--0.734375--940'
+INPUT_MODEL_PATH = './final_model/roomnet'
 INPUT_IMAGES_DIR = './test_images/set3/images'
 IMG_SIDE = 224
 
@@ -79,10 +79,13 @@ def classify_im_dir(nn, imgs_dir):
     for i in tqdm(range(num_fpaths)):
         fpath = all_im_paths[i]
         im = cv2.imread(fpath)
-        pred_label = CLASS_LABELS[nn.infer_optimized(im)]
+        infer_outs = nn.infer_optimized(im)
+        pred_label = CLASS_LABELS[infer_outs[0][0]]
+        pred_conf = infer_outs[1][0][infer_outs[0][0]]
         shutil.copy(fpath, out_dir + os.sep + pred_label)
         sheet.write(i + 1, 0, fpath.split(os.sep)[-1])
         sheet.write(i + 1, 1, pred_label)
+        sheet.write(i + 1, 2, str(pred_conf))
     excel_file.save(xl_fpath)
     return xl_fpath
 

@@ -21,6 +21,10 @@ class RoomNet:
     def __init__(self, num_classes, im_side=600, compute_bn_mean_var=True, start_step=0, dropout_enabled=False,
                  learn_rate=1e-4, l2_regularizer_coeff=1e-2, num_steps=10000, dropout_rate=.2,
                  update_batchnorm_means_vars=True, optimized_inference=False, load_training_vars=False):
+        self.model_folder = 'all_trained_models/trained_models'
+        if not os.path.isdir(self.model_folder):
+            os.makedirs(self.model_folder)
+        self.model_fpath_prefix = self.model_folder + '/' + 'roomnet-'
         self.num_classes = num_classes
         self.im_side = im_side
         self.compute_bn_mean_var = compute_bn_mean_var
@@ -42,7 +46,7 @@ class RoomNet:
             self.dropout_enabled = False
             self.out_op, _, _, _ = self.init_nn_graph()
             self.outs_softmax_op = tf.nn.softmax(self.out_op)
-            self.outs_final = tf.argmax(self.outs_softmax_op, axis=-1)
+            self.outs_final = tf.argmax(self.outs_softmax_op, axis=-1), self.outs_softmax_op
             self.vars_to_keep = [v for v in tf.global_variables() if v not in self.unsaved_vars]
             self.restorer = tf.train.Saver(var_list=self.vars_to_keep)
             return
@@ -73,7 +77,7 @@ class RoomNet:
             self.train_op = self.opt.apply_gradients(zip(grads, self.trainable_vars), global_step=self.step_ph)
 
         self.outs_softmax_op = tf.nn.softmax(self.out_op)
-        self.outs_final = tf.argmax(self.outs_softmax_op, axis=-1)
+        self.outs_final = tf.argmax(self.outs_softmax_op, axis=-1), self.outs_softmax_op
 
         if not load_training_vars:
             self.restore_excluded_vars += [v for v in tf.all_variables() if 'Adam' in v.name or 'power' in v.name]
@@ -85,10 +89,6 @@ class RoomNet:
 
         self.saver = tf.train.Saver(max_to_keep=0, var_list=self.vars_to_keep)
         self.restorer = tf.train.Saver(var_list=self.vars_to_restore)
-        self.model_folder = 'all_trained_models/trained_models'
-        if not os.path.isdir(self.model_folder):
-            os.makedirs(self.model_folder)
-        self.model_fpath_prefix = self.model_folder + '/' + 'roomnet-'
 
     def init(self):
         if not self.sess:
@@ -160,8 +160,8 @@ class RoomNet:
             im = cv2.resize(im, (self.im_side, self.im_side))
         im = ((im[:, :, [2, 1, 0]] / 255.) * 2) - 1
         im = np.expand_dims(im, 0)
-        out_label_idx = self.sess.run(self.outs_final, feed_dict={self.x_tensor: im})[0]
-        return out_label_idx
+        out_label_idx, out_label_conf = self.sess.run(self.outs_final, feed_dict={self.x_tensor: im})
+        return out_label_idx, out_label_conf
 
     def train_step(self, x_in, y):
         x = ((x_in[:, :, :, [2, 1, 0]] / 255.) * 2) - 1
