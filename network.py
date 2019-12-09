@@ -42,7 +42,7 @@ class RoomNet:
             self.dropout_enabled = False
             self.out_op, _, _, _ = self.init_nn_graph()
             self.outs_softmax_op = tf.nn.softmax(self.out_op)
-            self.outs_final = tf.argmax(self.outs_softmax_op, axis=-1)
+            self.outs_final = tf.argmax(self.outs_softmax_op, axis=-1), self.outs_softmax_op
             self.vars_to_keep = [v for v in tf.global_variables() if v not in self.unsaved_vars]
             self.restorer = tf.train.Saver(var_list=self.vars_to_keep)
             return
@@ -152,8 +152,8 @@ class RoomNet:
             im = cv2.resize(im, (self.im_side, self.im_side))
         im = ((im[:, :, [2, 1, 0]] / 255.) * 2) - 1
         im = np.expand_dims(im, 0)
-        out_label_idx = self.sess.run(self.outs_final, feed_dict={self.x_tensor: im})[0]
-        return out_label_idx
+        out_label_idx, out_label_conf = self.sess.run(self.outs_final, feed_dict={self.x_tensor: im})
+        return out_label_idx, out_label_conf
 
     def train_step(self, x_in, y):
         x = ((x_in[:, :, :, [2, 1, 0]] / 255.) * 2) - 1
