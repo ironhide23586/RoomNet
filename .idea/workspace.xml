@@ -3,13 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="96985683-d6bc-4d04-a7d9-84697103ee1a" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/final_model/roomnet.data-00000-of-00001" beforeDir="false" afterPath="$PROJECT_DIR$/final_model/roomnet.data-00000-of-00001" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/final_model/roomnet.index" beforeDir="false" afterPath="$PROJECT_DIR$/final_model/roomnet.index" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/final_model/roomnet.meta" beforeDir="false" afterPath="$PROJECT_DIR$/final_model/roomnet.meta" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/infer.py" beforeDir="false" afterPath="$PROJECT_DIR$/infer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/network.py" beforeDir="false" afterPath="$PROJECT_DIR$/network.py" afterDir="false" />
     </list>
-    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -40,10 +35,15 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="ProjectId" id="1Pruk94UaoCQDtA4nkg9USvPlqC" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
   <component name="PropertiesComponent">
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../deeplite-challenge" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -53,18 +53,6 @@
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
     <property name="settings.editor.selected.configurable" value="preferences.lookFeel" />
-  </component>
-  <component name="RunDashboard">
-    <option name="ruleStates">
-      <list>
-        <RuleState>
-          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
-        </RuleState>
-        <RuleState>
-          <option name="name" value="StatusDashboardGroupingRule" />
-        </RuleState>
-      </list>
-    </option>
   </component>
   <component name="RunManager" selected="Python.infer">
     <configuration name="infer" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
@@ -139,6 +127,18 @@
       <item itemvalue="Python.plot" />
     </list>
   </component>
+  <component name="ServiceViewManager">
+    <option name="viewStates">
+      <list>
+        <serviceView>
+          <treeState>
+            <expand />
+            <select />
+          </treeState>
+        </serviceView>
+      </list>
+    </option>
+  </component>
   <component name="SvnConfiguration">
     <configuration />
   </component>
@@ -170,7 +170,10 @@
       <workItem from="1567691416304" duration="1079000" />
       <workItem from="1567762824488" duration="15000" />
       <workItem from="1567947484296" duration="6461000" />
-      <workItem from="1567958900769" duration="1362000" />
+      <workItem from="1567958900769" duration="1501000" />
+      <workItem from="1568182547448" duration="689000" />
+      <workItem from="1575866660769" duration="659000" />
+      <workItem from="1575899194127" duration="2726000" />
     </task>
     <servers />
   </component>
@@ -199,6 +202,40 @@
       </map>
     </option>
   </component>
+  <component name="WindowStateProjectService">
+    <state width="809" height="234" key="GridCell.Tab.0.bottom" timestamp="1575901956166">
+      <screen x="0" y="0" width="1707" height="920" />
+    </state>
+    <state width="809" height="234" key="GridCell.Tab.0.bottom/0.0.1707.920@0.0.1707.920" timestamp="1575901956166" />
+    <state width="809" height="234" key="GridCell.Tab.0.center" timestamp="1575901956166">
+      <screen x="0" y="0" width="1707" height="920" />
+    </state>
+    <state width="809" height="234" key="GridCell.Tab.0.center/0.0.1707.920@0.0.1707.920" timestamp="1575901956166" />
+    <state width="809" height="234" key="GridCell.Tab.0.left" timestamp="1575901956166">
+      <screen x="0" y="0" width="1707" height="920" />
+    </state>
+    <state width="809" height="234" key="GridCell.Tab.0.left/0.0.1707.920@0.0.1707.920" timestamp="1575901956166" />
+    <state width="809" height="234" key="GridCell.Tab.0.right" timestamp="1575901956166">
+      <screen x="0" y="0" width="1707" height="920" />
+    </state>
+    <state width="809" height="234" key="GridCell.Tab.0.right/0.0.1707.920@0.0.1707.920" timestamp="1575901956166" />
+    <state width="809" height="234" key="GridCell.Tab.1.bottom" timestamp="1575901956167">
+      <screen x="0" y="0" width="1707" height="920" />
+    </state>
+    <state width="809" height="234" key="GridCell.Tab.1.bottom/0.0.1707.920@0.0.1707.920" timestamp="1575901956167" />
+    <state width="809" height="234" key="GridCell.Tab.1.center" timestamp="1575901956167">
+      <screen x="0" y="0" width="1707" height="920" />
+    </state>
+    <state width="809" height="234" key="GridCell.Tab.1.center/0.0.1707.920@0.0.1707.920" timestamp="1575901956167" />
+    <state width="809" height="234" key="GridCell.Tab.1.left" timestamp="1575901956166">
+      <screen x="0" y="0" width="1707" height="920" />
+    </state>
+    <state width="809" height="234" key="GridCell.Tab.1.left/0.0.1707.920@0.0.1707.920" timestamp="1575901956166" />
+    <state width="809" height="234" key="GridCell.Tab.1.right" timestamp="1575901956167">
+      <screen x="0" y="0" width="1707" height="920" />
+    </state>
+    <state width="809" height="234" key="GridCell.Tab.1.right/0.0.1707.920@0.0.1707.920" timestamp="1575901956167" />
+  </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
@@ -216,10 +253,10 @@
     </watches-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/RoomNet$infer.coverage" NAME="infer Coverage Results" MODIFIED="1567960239662" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/RoomClassifier$main.coverage" NAME="main Coverage Results" MODIFIED="1561331333859" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RoomNet$train.coverage" NAME="train Coverage Results" MODIFIED="1567952537504" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RoomNet$plot.coverage" NAME="plot Coverage Results" MODIFIED="1562655783115" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/RoomNet$infer.coverage" NAME="infer Coverage Results" MODIFIED="1575901956147" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/RoomClassifier$main.coverage" NAME="main Coverage Results" MODIFIED="1561331333859" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RoomNet$main.coverage" NAME="main Coverage Results" MODIFIED="1562459813245" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

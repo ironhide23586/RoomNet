@@ -62,7 +62,7 @@ def force_makedir(dir):
         os.makedirs(dir)
 
 
-def classify_im_dir(nn, imgs_dir):
+def classify_im_dir(nn, imgs_dir, overlay=True):
     print('Classifying images in', imgs_dir)
     all_im_paths = glob(imgs_dir + '/*')
     num_fpaths = len(all_im_paths)
@@ -82,7 +82,17 @@ def classify_im_dir(nn, imgs_dir):
         infer_outs = nn.infer_optimized(im)
         pred_label = CLASS_LABELS[infer_outs[0][0]]
         pred_conf = infer_outs[1][0][infer_outs[0][0]]
-        shutil.copy(fpath, out_dir + os.sep + pred_label)
+        out_fpath_dir = out_dir + os.sep + pred_label
+        print(fpath, '--->', pred_label, pred_conf)
+        if overlay:
+            h, w, _ = im.shape
+            cv2.putText(im, "Predicted Class: " + pred_label, (int(.5 * w), int(.90 * h)),
+                        cv2.FONT_HERSHEY_SIMPLEX, (h / 720.) * .85, (0, 255, 0), 1, cv2.LINE_AA)
+            cv2.putText(im, "Confidence: " + str(round(pred_conf * 100, 2)) + " %", (int(.5 * w), int(.95 * h)),
+                        cv2.FONT_HERSHEY_SIMPLEX, (h / 720.) * .85, (255, 0, 0), 1, cv2.LINE_AA)
+            cv2.imwrite(out_fpath_dir + os.sep + fpath.split(os.sep)[-1], im)
+        else:
+            shutil.copy(fpath, out_fpath_dir)
         sheet.write(i + 1, 0, fpath.split(os.sep)[-1])
         sheet.write(i + 1, 1, pred_label)
         sheet.write(i + 1, 2, str(pred_conf))
